@@ -1,8 +1,6 @@
 import math
 from itertools import chain, combinations
 import itertools
-from galois import FieldArray
-from collections import OrderedDict
 
 # https://geekflare.com/prime-number-in-python/
 def is_prime(number: int) -> bool:
@@ -35,14 +33,15 @@ def get_powerset(iterable: set) -> list:
     return chain.from_iterable(combinations(s, length) for length in range(len(s)+1))
 
 # https://stackoverflow.com/questions/533905/how-to-get-the-cartesian-product-of-multiple-lists
-def get_cartesian_product(iterable: list) -> list:
+def get_cartesian_product(iterable: list) -> list[list]:
+    # assume que sempre vai retornar a mesma ordem
     result = itertools.product(iterable, repeat=len(iterable))
     return [list(element) for element in result]
 
-def get_polynomial_ring_from_field(field: FieldArray):
-    pass
-
-
-
-if __name__ == '__main__':
-    print(get_cartesian_product([0,1,2,3,4]))
+def get_polynomials_with_deg_up_to_k(polinomial_coefficients: list[list], k: int):
+    updated_polinomial_coefficients = list(list())
+    for polinomial_coefficient in polinomial_coefficients:
+        updated_polinomial_coefficient = polinomial_coefficient[:k]
+        if updated_polinomial_coefficient not in updated_polinomial_coefficients:
+            updated_polinomial_coefficients.append(updated_polinomial_coefficient)
+    return updated_polinomial_coefficients
