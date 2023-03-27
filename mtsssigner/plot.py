@@ -12,7 +12,7 @@ figure, ax = plot.subplots(subplot_kw={"projection": "3d"})
 X = numpy.arange(0, 30, 1, dtype=int)
 Y = numpy.arange(0, 30, 1, dtype=int)
 X, Y = numpy.meshgrid(X, Y)
-Z = numpy.floor((Y-1)/X)
+Z = numpy.floor((Y-1)/(X-1))
 
 # Create colormap
 
