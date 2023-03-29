@@ -1,4 +1,5 @@
-Parâmetros de assinatura opcionais planejados: 
+Parâmetros de assinatura opcionais planejados:
+
     - Número de erros/modificações máximo permitido
     - Tamanho máximo da assinatura (depende do tamanho da chave)
 
