@@ -18,6 +18,7 @@ A chave pública pode ser criada com o comando```sudo openssl rsa -in {nome do a
 Gerar assinatura detached com openssl:
 
 ```openssl dgst -sha256 -sign {arquivo da chave privada} -out {nome do arquivo da assinatura} {arquivo pra assinar}```
+
 ```openssl base64 -in {arquivo da assinatura em binário} -out {arquivo da assinatura em base64}``` (p/ gerar base64 da assinatura)
 
 Verificar assinatura detached com openssl:

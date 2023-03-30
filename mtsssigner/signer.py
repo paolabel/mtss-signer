@@ -36,18 +36,18 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     #   q: int = get_q_from_error_and_block_number(max_modifications, b)
     #   cff = create_cff(q, get_k_from_b_and_q(b, q))
     
-    block_concatenations = list()
+    tests = list()
     
     for test in range(cff_dimensions[0]):
         concatenation: str = ""
         for block in range(cff_dimensions[1]):
             if (cff[test][block] == 1):
                 concatenation += blocks[block]
-        block_concatenations.append(concatenation)
+        tests.append(concatenation)
     
     signature = bytearray()
-    for concatenation in block_concatenations:
-        signature += SHA256.new(concatenation.encode()).digest()
+    for test in tests:
+        signature += SHA256.new(test.encode()).digest()
     signature += SHA256.new(message.encode()).digest()
     
     open_pk_command = f"sudo openssl rsa -in {private_key_path}"
