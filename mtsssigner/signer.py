@@ -11,11 +11,10 @@ from Crypto.PublicKey import RSA
 from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
-from Crypto.Hash.SHA256 import SHA256Hash
 
 # sha256(sha2-256) -> 256 bits de saída -> 32 bytes
-# https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si#:~:text=So%20a%20256%20bit%20hash,bits%20(512%20bytes)%20output.
-def sign(message_file_path: str, private_key_path: str, max_tests: int = -1, max_modifications: int = -1) -> bytearray:
+# https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si
+def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_modifications: int = 0) -> bytearray:
     with open(message_file_path, "r") as message_file:
         message: str = message_file.read()
     blocks: list = message.split('\n')
@@ -60,7 +59,15 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = -1, max
     private_key: RsaKey = RSA.import_key(private_key_str, private_key_password)
     t_hash = SHA256.new(signature)
     signed_t = pkcs1_15.new(private_key).sign(t_hash)
-    return signature + signed_t
+    
+    signature += signed_t
+    
+    signature_file_path = message_file_path.split(".")[0] + ".mts"
+    
+    with open(signature_file_path, "wb") as signature_file:
+        signature_file.write(signature)
+    
+    return signature
     
 def get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str):
     lines_key = openssl_stdout.split("\\n")
