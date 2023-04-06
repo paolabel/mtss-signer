@@ -5,7 +5,9 @@ from Crypto.Hash import SHA256
 
 from typing import List, Tuple
 
-import sys
+from math import sqrt
+
+from cff_builder import create_cff, get_k_from_b_and_q, get_d
 
 DIGEST_SIZE = 256
 
@@ -21,7 +23,8 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
 
     public_key: RsaKey = RSA.import_key(public_key_str)
 
-    key_modulus = len(str(bin(public_key.n))[2:])
+    key_modulus = public_key.n.bit_length()
+    print(key_modulus)
 
     t = signature[:-int(key_modulus/8)]
     print(f"{t.hex()}\nTamanho de T: {len(str(t.hex()))*4}")
@@ -43,5 +46,40 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
         print("The message was not modified and the signature is valid")
         return (True, [])
 
-    joined_hashed_tests = t[:-DIGEST_SIZE]
-    hashed_tests = [joined_hashed_tests[i:i+DIGEST_SIZE] for i in range(0, len(joined_hashed_tests), DIGEST_SIZE)]
+    joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE/8)]
+    print(f"Testes:\n{joined_hashed_tests.hex()}\n")
+    hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE/8)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE/8))]
+    print([element.hex() for element in hashed_tests])
+
+    number_of_tests = len(hashed_tests)
+    blocks: list = message.split('\n')
+    number_of_blocks = len(blocks)
+
+    cff: list(list) = [[]]
+    q: int = int(sqrt(number_of_tests))
+    b: int = number_of_blocks
+    k: int = get_k_from_b_and_q(b, q)
+    d: int = get_d(q, k)
+    cff = create_cff(q, k)
+
+    rebuilt_tests: List[str] = list()
+    for test in range(1, number_of_tests):
+        concatenation = ""
+        for block in range(number_of_blocks):
+            if(cff[test][block] == 1):
+                concatenation += blocks[block]
+        rebuilt_tests.append(concatenation)
+
+    non_modified_blocks: List[int] = list()
+
+    for test in range (len(rebuilt_tests)):
+        rebuilt_hashed_test = SHA256.new(rebuilt_tests[test].encode()).digest()
+        if (rebuilt_hashed_test == hashed_tests[test]):
+            for block in range (number_of_blocks):
+                if(cff[test][block] == 1):
+                    non_modified_blocks.append(block)
+
+    modified_blocks = [block for block in range(number_of_blocks) if block not in non_modified_blocks]
+    result = len(modified_blocks) <= d
+    print(f"Resultado: {result}\nBlocos modificados: {modified_blocks}")
+    return (result, modified_blocks)

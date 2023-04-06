@@ -7,6 +7,8 @@ Por enquanto só há opção de assinar usando esquema PKCS#1 v1.5 com SHA256 e 
 
 Considerar criar script para criação de chaves ao invés de depender da versão do OpenSSL
 
+Considerar colocar na assinatura número de blocos da mensagem original
+
 Falta assinar XML
 
 Dependências: pycryptodome, galois, pytest
