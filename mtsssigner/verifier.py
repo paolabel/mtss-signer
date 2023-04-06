@@ -5,6 +5,8 @@ from Crypto.Hash import SHA256
 
 from typing import List, Tuple
 
+import sys
+
 DIGEST_SIZE = 256
 
 def verify(message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
@@ -19,20 +21,23 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
 
     public_key: RsaKey = RSA.import_key(public_key_str)
 
-    key_n = public_key.n
+    key_modulus = len(str(bin(public_key.n))[2:])
 
-    t = signature[:key_n]
-    t_hash = SHA256.new(t).digest()
-    t_signature = signature[-key_n:]
+    t = signature[:-int(key_modulus/8)]
+    print(f"{t.hex()}\nTamanho de T: {len(str(t.hex()))*4}")
+    t_hash = SHA256.new(t)
+    t_signature = signature[-int(key_modulus/8):]
+    print(f"{t_signature.hex()}\nTamanho da assinatura de T: {len(str(t_signature.hex()))*4}")
 
     try:
         pkcs1_15.new(public_key).verify(t_hash, t_signature)
+        print("Signature is valid for T")
     except ValueError:
         print("Signature could not be verified")
         return (False, [])
 
-    message_hash = SHA256.new(message.encode).digest()
-    signature_message_hash = SHA256.new(t[-DIGEST_SIZE:]).digest()
+    message_hash = SHA256.new(message.encode()).digest()
+    signature_message_hash = t[-int(DIGEST_SIZE/8):]
 
     if signature_message_hash == message_hash:
         print("The message was not modified and the signature is valid")

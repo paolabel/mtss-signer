@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "mtss-signer"
+version = "0.1.0"
+description = ""
+authors = ["paolabel <pa0la.abel@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "mtss_signer"}]
+
+[tool.poetry.dependencies]
+galois = "^0.3.3"
+numpy = "^1.23.5"
+pycryptodome = "^3.17"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
