@@ -5,15 +5,15 @@ Parâmetros de assinatura opcionais planejados:
 
 Por enquanto só há opção de assinar usando esquema PKCS#1 v1.5 com SHA256 e de criar a assinatura de modo detached
 
+Considerar criar script para criação de chaves ao invés de depender da versão do OpenSSL
+
 Falta assinar XML
 
-Dependências: pycrypto, galois, numpy
+Dependências: pycryptodome, galois, pytest
 
-A chave privada pode ser criada com o comando ```sudo openssl genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
+A chave privada pode ser criada  com o comando ```sudo openssl1.1 genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
 
-A chave pública pode ser criada com o comando```sudo openssl rsa -in {nome do arquivo}.pem -outform PEM -pubout -out {nome do arquivo}.pem```
-
-    - Ambos os comandos colocam os arquivos com as chaves na home do usuário
+A chave pública pode ser criada com o comando```sudo openssl1.1 rsa -in {nome do arquivo}.pem -outform PEM -pubout -out {nome do arquivo}.pem```
 
 Gerar assinatura detached com openssl:
 
