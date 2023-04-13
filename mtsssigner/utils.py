@@ -14,9 +14,9 @@ def is_prime(number: int) -> bool:
     return True
 
 # https://www.quora.com/How-can-we-check-if-a-number-is-prime-power
-def is_prime_power(number:int) -> bool: 
+def is_prime_power(number:int) -> bool:
     power_range = int(math.log(number, 2)) 
-    for power in range(1,power_range+1): 
+    for power in range(1,power_range+1):
         if power == 1:
             root = number 
         elif power == 2:

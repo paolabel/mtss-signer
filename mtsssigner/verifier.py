@@ -24,13 +24,10 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
     public_key: RsaKey = RSA.import_key(public_key_str)
 
     key_modulus = public_key.n.bit_length()
-    print(key_modulus)
 
     t = signature[:-int(key_modulus/8)]
-    print(f"{t.hex()}\nTamanho de T: {len(str(t.hex()))*4}")
     t_hash = SHA256.new(t)
     t_signature = signature[-int(key_modulus/8):]
-    print(f"{t_signature.hex()}\nTamanho da assinatura de T: {len(str(t_signature.hex()))*4}")
 
     try:
         pkcs1_15.new(public_key).verify(t_hash, t_signature)
@@ -46,10 +43,10 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
         print("The message was not modified and the signature is valid")
         return (True, [])
 
+    print("The message was modified")
+
     joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE/8)]
-    print(f"Testes:\n{joined_hashed_tests.hex()}\n")
     hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE/8)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE/8))]
-    print([element.hex() for element in hashed_tests])
 
     number_of_tests = len(hashed_tests)
     blocks: list = message.split('\n')
@@ -63,7 +60,7 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
     cff = create_cff(q, k)
 
     rebuilt_tests: List[str] = list()
-    for test in range(1, number_of_tests):
+    for test in range(number_of_tests):
         concatenation = ""
         for block in range(number_of_blocks):
             if(cff[test][block] == 1):
@@ -81,5 +78,9 @@ def verify(message_file_path: str, signature_file_path: str, public_key_file_pat
 
     modified_blocks = [block for block in range(number_of_blocks) if block not in non_modified_blocks]
     result = len(modified_blocks) <= d
+
     print(f"Resultado: {result}\nBlocos modificados: {modified_blocks}")
     return (result, modified_blocks)
+
+def verify_and_correct(message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
+    pass

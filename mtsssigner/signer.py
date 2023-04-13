@@ -47,11 +47,10 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
 
     signature = bytearray()
     for test in tests:
-        signature += SHA256.new(test.encode()).digest()
-    signature += SHA256.new(message.encode()).digest()
-
-    print(f"T: \n{signature.hex()}\n")
-    print(f"{signature.hex()}\nTamanho de T: {len(str(signature.hex()))*4}")
+        test_hash = SHA256.new(test.encode()).digest()
+        signature += test_hash
+    message_hash = SHA256.new(message.encode()).digest()
+    signature += message_hash
 
     open_pk_command = f"sudo openssl rsa -in {private_key_path}"
     process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE)
@@ -63,12 +62,9 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     t_hash = SHA256.new(signature)
     signed_t = pkcs1_15.new(private_key).sign(t_hash)
 
-    print(f"Assinatura de T: \n{signed_t.hex()}\n")
-    print(f"{signed_t.hex()}\nTamanho da assinatura de T: {len(str(signed_t.hex()))*4}")
-
     signature += signed_t
 
-    signature_file_path = message_file_path.split(".")[0] + "_signature.mts"
+    signature_file_path = message_file_path.rsplit(".", 1)[0] + "_signature.mts"
 
     with open(signature_file_path, "wb") as signature_file:
         signature_file.write(signature)
