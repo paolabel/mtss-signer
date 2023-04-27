@@ -1,7 +1,7 @@
 import sys
 
 from signer import sign
-from verifier import verify
+from verifier import Verifier
 
 # python mtss_signer.py sign messagepath privkeypath -s/-m number
 # python mtss_signer.py verify messagepath pubkeypath signaturepath
@@ -21,5 +21,6 @@ if __name__ == '__main__':
         else:
             raise ValueError("Invalid option for sign operation")
     elif operation == "verify":
+        verifier = Verifier()
         signature_file_path = sys.argv[4]
-        verify(message_file_path, signature_file_path, key_file_path)
+        verifier.verify_and_correct(message_file_path, signature_file_path, key_file_path)
