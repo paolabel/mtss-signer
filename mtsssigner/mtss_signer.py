@@ -1,4 +1,6 @@
 import sys
+from timeit import default_timer as timer
+from datetime import timedelta
 
 from signer import sign
 from verifier import Verifier
@@ -6,6 +8,9 @@ from verifier import Verifier
 # python mtss_signer.py sign messagepath privkeypath -s/-m number
 # python mtss_signer.py verify messagepath pubkeypath signaturepath
 if __name__ == '__main__':
+
+    start = timer()
+
     operation = sys.argv[1]
     message_file_path = sys.argv[2]
     key_file_path = sys.argv[3]
@@ -24,3 +29,6 @@ if __name__ == '__main__':
         verifier = Verifier()
         signature_file_path = sys.argv[4]
         verifier.verify_and_correct(message_file_path, signature_file_path, key_file_path)
+
+    end = timer()
+    print(f"Elapsed time: {timedelta(seconds=end-start)}")

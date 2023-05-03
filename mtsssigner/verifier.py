@@ -10,14 +10,18 @@ from math import sqrt
 from cff_builder import create_cff, get_k_from_b_and_q, get_d
 
 DIGEST_SIZE = 256
+# 10 caracteres Unicode
+MAX_CORRECTABLE_BLOCK_SIZE_BITS = 8000
 
 class Verifier:
 
     cff: List[List[int]] = [[]]
+    message: str
+    hashed_tests: List[bytearray]
 
     def verify(self, message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
         with open(message_file_path, "r") as message_file:
-            message: str = message_file.read()
+            self.message = message_file.read()
 
         with open(signature_file_path, "rb") as signature_file:
             signature: bytearray = signature_file.read()
@@ -39,7 +43,7 @@ class Verifier:
             print("Signature could not be verified")
             return (False, [])
 
-        message_hash = SHA256.new(message.encode()).digest()
+        message_hash = SHA256.new(self.message.encode()).digest()
         signature_message_hash = t[-int(DIGEST_SIZE/8):]
 
         if signature_message_hash == message_hash:
@@ -47,10 +51,10 @@ class Verifier:
             return (True, [])
 
         joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE/8)]
-        hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE/8)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE/8))]
+        self.hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE/8)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE/8))]
 
-        number_of_tests = len(hashed_tests)
-        blocks: list = message.split('\n')
+        number_of_tests = len(self.hashed_tests)
+        blocks: list = self.message.split('\n')
         number_of_blocks = len(blocks)
 
         q: int = int(sqrt(number_of_tests))
@@ -60,17 +64,17 @@ class Verifier:
         self.cff = create_cff(q, k)
         rebuilt_tests: List[str] = list()
         for test in range(number_of_tests):
-            concatenation = ""
+            concatenation = bytes()
             for block in range(number_of_blocks):
                 if(self.cff[test][block] == 1):
-                    concatenation += blocks[block]
+                    concatenation += SHA256.new(blocks[block].encode()).digest()
             rebuilt_tests.append(concatenation)
 
         non_modified_blocks: List[int] = list()
 
         for test in range (len(rebuilt_tests)):
-            rebuilt_hashed_test = SHA256.new(rebuilt_tests[test].encode()).digest()
-            if (rebuilt_hashed_test == hashed_tests[test]):
+            rebuilt_hashed_test = SHA256.new(rebuilt_tests[test]).digest()
+            if (rebuilt_hashed_test == self.hashed_tests[test]):
                 for block in range (number_of_blocks):
                     if(self.cff[test][block] == 1):
                         non_modified_blocks.append(block)
@@ -84,9 +88,10 @@ class Verifier:
     # retorna a mensagem corrigida em um arquivo
     def verify_and_correct(self, message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
         verification_result = self.verify(message_file_path, signature_file_path, public_key_file_path)
-        if verification_result[0] == False:
+        if verification_result[0] == False or verification_result[1] == []:
             return verification_result
-        print(self.cff)
+        blocks: list = self.message.split('\n')
+        corrected = dict()
         for k in verification_result[1]:
             i_rows = list()
             modified_blocks_minus_k = set(verification_result[1]) - {k}
@@ -97,6 +102,31 @@ class Verifier:
                         if self.cff[i][j] == 1:
                             i_rows.pop()
                             break
-            for g in modified_blocks_minus_k:
-                pass
-            print(f"Linhas que só contém o bloco {k} dentre os modificados: {i_rows}")
+            i = i_rows[0]
+            corrected[k] = False
+            for b in range(MAX_CORRECTABLE_BLOCK_SIZE_BITS):
+                hash_k = SHA256.new(int_to_bytes(b)).digest()
+                concatenation = bytes()
+                for block in range(len(self.cff[i])):
+                    if self.cff[i][block] == 1:
+                        if block != k:
+                            concatenation += SHA256.new(blocks[block].encode()).digest()
+                        else:
+                            concatenation += hash_k
+                rebuilt_corrected_test = SHA256.new(concatenation).digest()
+                if rebuilt_corrected_test == self.hashed_tests[i]:
+                    if corrected[k] == False:
+                        corrected[k] = True
+                        blocks[k] = (int_to_bytes(b)).decode("utf-8")
+                        print(f"Bloco {k} foi corrigido")
+                    else:
+                        print("Houve colisão")
+                        return verification_result
+        if any(correction == True for correction in corrected.values()):
+            correction_file_path = message_file_path.rsplit(".", 1)[0] + "_corrected.txt"
+            with open(correction_file_path, "w") as correction_file:
+                correction_file.write("\n".join(blocks))
+        return verification_result
+
+def int_to_bytes(number: int):
+    return number.to_bytes((len(bin(number)[2:]) + 7) // 8, 'big')

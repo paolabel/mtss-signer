@@ -39,15 +39,15 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     tests = list()
 
     for test in range(cff_dimensions[0]):
-        concatenation: str = ""
+        concatenation = bytes()
         for block in range(cff_dimensions[1]):
             if (cff[test][block] == 1):
-                concatenation += blocks[block]
+                concatenation += SHA256.new(blocks[block].encode()).digest()
         tests.append(concatenation)
 
     signature = bytearray()
     for test in tests:
-        test_hash = SHA256.new(test.encode()).digest()
+        test_hash = SHA256.new(test).digest()
         signature += test_hash
     message_hash = SHA256.new(message.encode()).digest()
     signature += message_hash
@@ -69,8 +69,6 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     with open(signature_file_path, "wb") as signature_file:
         signature_file.write(signature)
 
-    print(f"Assinatura completa: \n{signature.hex()}")
-
     return signature
 
 def get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str):
@@ -80,10 +78,3 @@ def get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str):
         private_key_str += lines_key[line + 1]
     private_key_str += "\n" + lines_key[-1]
     return private_key_str
-
-# pyton3 signer.py filepath key -b/-m number
-if __name__ == '__main__':
-    filepath = sys.argv[1]
-    private_key_path = sys.argv[2]
-    number_of_tests = int(sys.argv[3])
-    sign(filepath, private_key_path, max_tests=number_of_tests)
