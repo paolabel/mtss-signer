@@ -10,8 +10,7 @@ from math import sqrt
 from cff_builder import create_cff, get_k_from_b_and_q, get_d
 
 DIGEST_SIZE = 256
-# 10 caracteres Unicode
-MAX_CORRECTABLE_BLOCK_SIZE_BITS = 8000
+MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = 4
 
 class Verifier:
 
@@ -104,7 +103,7 @@ class Verifier:
                             break
             i = i_rows[0]
             corrected[k] = False
-            for b in range(MAX_CORRECTABLE_BLOCK_SIZE_BITS):
+            for b in range(2**(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS*8)):
                 hash_k = SHA256.new(int_to_bytes(b)).digest()
                 concatenation = bytes()
                 for block in range(len(self.cff[i])):

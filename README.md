@@ -13,9 +13,9 @@ Falta assinar XML
 
 Dependências: pycryptodome, galois, pytest
 
-A chave privada pode ser criada  com o comando ```sudo openssl1.1 genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
+A chave privada pode ser criada  com o comando ```sudo openssl-1.1 genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
 
-A chave pública pode ser criada com o comando```sudo openssl1.1 rsa -in {nome do arquivo}.pem -outform PEM -pubout -out {nome do arquivo}.pem```
+A chave pública pode ser criada com o comando```sudo openssl-1.1 rsa -in {nome do arquivo}.pem -outform PEM -pubout -out {nome do arquivo}.pem```
 
 Gerar assinatura detached com openssl:
 

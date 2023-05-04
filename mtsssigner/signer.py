@@ -19,6 +19,10 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
         message: str = message_file.read()
     blocks: list = message.split('\n')
 
+    # number = int.from_bytes(bytes(blocks[4], "utf-8"), byteorder=sys.byteorder)
+    # print(number)
+    # print(bin(number))
+
     cff: list(list) = [[]]
     cff_dimensions = (0, 0)
 
