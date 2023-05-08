@@ -131,7 +131,7 @@ def get_possible_d_and_t_from_b(n: int) -> Dict:
             if d > 0:
                 possible_d_and_t[d] = q**2
     return possible_d_and_t
-
+27
 def get_results_grid():
     grid = numpy.zeros((20,30), dtype=int)
     for q in range(len(grid)):
