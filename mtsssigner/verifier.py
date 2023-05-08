@@ -107,7 +107,7 @@ class Verifier:
                             break
             i = i_rows[0]
             self.corrected[k] = False
-            find_correct_b = functools.partial(return_if_correct_b, self=self, i=i, k=k)
+            find_correct_b = functools.partial(return_if_correct_b, verifier=self, i=i, k=k)
             process_pool_size = available_cpu_count()
             print(f"Limite de caracteres por linha para a correção: {MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS}")
             print(f"Processos paralelos: {process_pool_size}")
