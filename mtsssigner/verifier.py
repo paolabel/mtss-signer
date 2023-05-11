@@ -2,7 +2,7 @@ from Crypto.PublicKey import RSA
 from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
-
+from mtsssigner.signer import K
 from multiprocessing import Pool
 
 import functools
@@ -11,9 +11,10 @@ from typing import List, Tuple
 
 from math import sqrt
 
-from cff_builder import create_cff, get_k_from_b_and_q, get_d
+from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, get_d
 
 DIGEST_SIZE = 256
+DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
 class Verifier:
 
@@ -106,7 +107,19 @@ class Verifier:
                             break
             i = i_rows[0]
             self.corrected[k] = False
-            find_correct_b = functools.partial(return_if_correct_b, verifier=self, i=i, k=k)
+
+            i_concatenation = list()
+            k_index = -1
+            for block in range(len(self.cff[i])):
+                if self.cff[i][block] == 1:
+                    if block != k:
+                        i_concatenation.append(SHA256.new(self.blocks[block].encode()).digest())
+                    else:
+                        k_index = len(i_concatenation)
+                        i_concatenation.append(b'00000000000000000000000000000000')
+            k_index = int((k_index*DIGEST_SIZE)/8)
+
+            find_correct_b = functools.partial(return_if_correct_b, verifier=self, concatenation=bytearray(b''.join(i_concatenation)), k_index = k_index, i=i, k=k)
             process_pool_size = available_cpu_count()
             MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = self.get_max_block_length()
             print(f"Limite de caracteres por linha para a correção: {MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS}")
@@ -132,15 +145,9 @@ class Verifier:
     def get_max_block_length(self):
         return max([len(block) for block in self.blocks])
 
-def return_if_correct_b(b: int, verifier: Verifier, i: int, k: int) -> Tuple[bool, int] | None:
-    hash_k = SHA256.new(int_to_bytes(b)).digest()
-    concatenation = bytes()
-    for block in range(len(verifier.cff[i])):
-        if verifier.cff[i][block] == 1:
-            if block != k:
-                concatenation += SHA256.new(verifier.blocks[block].encode()).digest()
-            else:
-                concatenation += hash_k
+def return_if_correct_b(b: int, verifier: Verifier, concatenation: bytearray, k_index:int, i: int, k: int) -> Tuple[bool, int]:
+    hash_k = bytearray(SHA256.new(int_to_bytes(b)).digest())
+    concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
     rebuilt_corrected_test = SHA256.new(concatenation).digest()
     if rebuilt_corrected_test == verifier.hashed_tests[i]:
         if verifier.corrected[k] == False:

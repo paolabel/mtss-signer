@@ -14,8 +14,8 @@ from math import inf, sqrt, log, comb
 import itertools
 import numpy
 import sys
-from utils.math_utils import get_all_coefficient_combinations_in_field, get_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
-from utils.prime_utils import is_prime_power
+from mtsssigner.utils.math_utils import get_all_coefficient_combinations_in_field, get_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
+from mtsssigner.utils.prime_utils import is_prime_power
 from numpy.polynomial import Polynomial
 
 def get_b_set(field: FieldArray, k: int) -> List[Polynomial]:

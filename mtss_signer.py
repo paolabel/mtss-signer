@@ -2,8 +2,8 @@ import sys
 from timeit import default_timer as timer
 from datetime import timedelta
 
-from signer import sign
-from verifier import Verifier
+from mtsssigner.signer import sign
+from mtsssigner.verifier import Verifier
 
 # python mtss_signer.py sign messagepath privkeypath -s/-m number
 # python mtss_signer.py verify messagepath pubkeypath signaturepath

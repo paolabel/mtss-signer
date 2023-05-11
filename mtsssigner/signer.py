@@ -1,7 +1,7 @@
 import sys
 import subprocess
 
-from cff_builder import create_cff, get_k_from_b_and_q, create_1_cff
+from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, create_1_cff
 
 from math import sqrt
 
@@ -11,6 +11,8 @@ from Crypto.PublicKey import RSA
 from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
+
+K = 3
 
 # sha256(sha2-256) -> 256 bits de saída -> 32 bytes
 # https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si

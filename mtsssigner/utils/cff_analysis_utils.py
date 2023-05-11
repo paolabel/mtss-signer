@@ -2,7 +2,7 @@ import numpy
 from mtsssigner.cff_builder import get_d, get_t_for_1_cff
 from typing import Dict
 from math import log
-from prime_utils import basic_prime_power_sequence, is_prime_power
+from mtsssigner.utils.prime_utils import basic_prime_power_sequence, is_prime_power
 
 def get_results_grid():
     grid = numpy.zeros((20,30), dtype=int)
