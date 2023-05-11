@@ -7,23 +7,16 @@
 
 # imagem (resultados possíveis) de q = ????
 
-from typing import List, Dict
+from typing import List
 import galois
 from galois import FieldArray
 from math import inf, sqrt, log, comb
 import itertools
 import numpy
 import sys
-
-from utils import is_prime_power, get_all_coefficient_combinations_in_field, get_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
-
+from utils.math_utils import get_all_coefficient_combinations_in_field, get_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
+from utils.prime_utils import is_prime_power
 from numpy.polynomial import Polynomial
-
-# First 67 prime powers
-prime_power_sequence = [2, 3, 4, 5, 7, 8, 9, 11, 13, 16, 17, 19, 23, 25, 27, 29, 31, 32, 37, 41,
-                        43, 47, 49, 53, 59, 61, 64, 67, 71, 73, 79, 81, 83, 89, 97, 101, 103, 107, 109, 113,
-                        121, 125, 127, 128, 131, 137, 139, 149, 151, 157, 163, 167, 169, 173, 179, 181, 191,
-                        193, 199, 211, 223, 227, 229, 239, 241, 243, 251, 729]
 
 def get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
     polinomial_ring_coeffs: list[list] = get_all_coefficient_combinations_in_field(field)
@@ -116,50 +109,6 @@ def get_d_from_test_and_block_number(t: int, b: int):
 def get_k_from_b_and_q(b: int, q: int):
     return int(log(b,q))
 
-# Returns a dict where the keys are the allowed number of modifications
-# and the values are the number of tests required to build the cff
-# for the desired number of blocks
-def get_possible_d_and_t_from_b(n: int) -> Dict:
-    possible_d_and_t = dict()
-    for q in prime_power_sequence:
-        k = log(n, q)
-        if k - int(k) == 0.0 and k > 1:
-            d = get_d(q, int(k))
-            if d == 1:
-                possible_d_and_t[d] = get_t_for_1_cff(n)
-                continue
-            if d > 0:
-                possible_d_and_t[d] = q**2
-    return possible_d_and_t
-27
-def get_results_grid():
-    grid = numpy.zeros((20,30), dtype=int)
-    for q in range(len(grid)):
-        if not is_prime_power(q):
-            continue
-        for k in range(len(grid[q])):
-            grid[q][k] = get_d(q, k)
-    for q in range(len(grid)):
-        print(f"q={q} {grid[q]}")
-    return grid
-
-# Returns a dict containing the max amount and proportion for modifiable blocks
-# for a given number of tests/blocks
-# (to maximize the amount of modifiable blocks, the amount of tests is equal to the amount of blocks)
-def get_max_d_proportion():
-    proportions = dict()
-    k = 2
-    for q in range(260):
-        if not is_prime_power(q):
-            continue
-        d = get_d(q, k)
-        t = q**k
-        proportion = d/t
-        proportions[t] = (d, f"{round(proportion*100, 4)}%")
-    return proportions
-
 if __name__ == '__main__':
     numpy.set_printoptions(threshold=sys.maxsize)
-    get_results_grid()
-    print(get_possible_d_and_t_from_b(729))
-    # print(get_max_d_proportion())
+    print(get_d(3,2))

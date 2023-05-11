@@ -1,35 +1,9 @@
-import math
 from itertools import chain, combinations
 import itertools
 from typing import List
 from numpy.polynomial import Polynomial
 import numpy
 from galois import FieldArray
-
-# https://geekflare.com/prime-number-in-python/
-def is_prime(number: int) -> bool:
-    for factor in range(2,int(math.sqrt(number))+1):
-        if (number%factor) == 0:
-            return False
-    return True
-
-# https://www.quora.com/How-can-we-check-if-a-number-is-prime-power
-def is_prime_power(number:int) -> bool:
-    if number < 2:
-        return False
-    power_range = int(math.log(number, 2)) 
-    for power in range(1,power_range+1):
-        if power == 1:
-            root = number 
-        elif power == 2:
-            root = int(math.sqrt(number)) 
-        else:
-            # https://stackoverflow.com/questions/19255120/is-there-a-short-hand-for-nth-root-of-x-in-python
-            root = int(round(math.exp(math.log(number)/power), 0)) 
-            # ou root = int(round(x**(1/n)))
-        if (number == (root**power) and is_prime(root)): 
-            return True
-    return False
 
 # ainda não sei se preciso
 # https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
