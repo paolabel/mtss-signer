@@ -5,8 +5,7 @@ from matplotlib.ticker import AutoMinorLocator
 import matplotlib.pylab as pylab
 import numpy
 import matplotlib
-from utils import is_prime_power
-from cff_builder import get_d
+from mtsssigner.utils.cff_analysis_utils import get_max_d_proportion
 
 # figure, ax = plot.subplots(subplot_kw={"projection": "3d"})
 
@@ -59,19 +58,21 @@ from cff_builder import get_d
 # # plot.grid(which='minor')
 # plot.show()
 
-proportions = list()
-k = 2
-for q in range(2,260):
-    if not is_prime_power(q):
-        proportions.append(0)
-    d = get_d(q, k)
-    t = q**k
-    proportion = d/t
-    proportions.append(proportion)
+# proportions = list()
+# k = 2
+# for q in range(2,260):
+#     if not is_prime_power(q):
+#         proportions.append(0)
+#     d = get_d(q, k)
+#     t = q**k
+#     proportion = d/t
+#     proportions.append(proportion)
 
-fig, ax = plot.subplots()
-ax.plot(proportions)
+# fig, ax = plot.subplots()
+# ax.plot(proportions)
 
-# Shorthand is also supported and curly braces are optional
-fig.tight_layout()
-plot.show()
+# # Shorthand is also supported and curly braces are optional
+# fig.tight_layout()
+# plot.show()
+
+print(get_max_d_proportion())

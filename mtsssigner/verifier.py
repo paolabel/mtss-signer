@@ -14,7 +14,6 @@ from math import sqrt
 from cff_builder import create_cff, get_k_from_b_and_q, get_d
 
 DIGEST_SIZE = 256
-MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = 3
 
 class Verifier:
 
@@ -109,6 +108,7 @@ class Verifier:
             self.corrected[k] = False
             find_correct_b = functools.partial(return_if_correct_b, verifier=self, i=i, k=k)
             process_pool_size = available_cpu_count()
+            MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = self.get_max_block_length()
             print(f"Limite de caracteres por linha para a correção: {MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS}")
             print(f"Processos paralelos: {process_pool_size}")
             with Pool(process_pool_size) as process_pool:
@@ -128,6 +128,9 @@ class Verifier:
         else:
             print("Nenhum bloco foi corrigido")
         return verification_result
+    
+    def get_max_block_length(self):
+        return max([len(block) for block in self.blocks])
 
 def return_if_correct_b(b: int, verifier: Verifier, i: int, k: int) -> Tuple[bool, int] | None:
     hash_k = SHA256.new(int_to_bytes(b)).digest()
