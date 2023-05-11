@@ -11,7 +11,7 @@ Considerar colocar na assinatura número de blocos da mensagem original
 
 Falta assinar XML
 
-Dependências: pycryptodome, galois, pytest, SharedArray
+Dependências: pycryptodome, galois, pytest, sympy
 
 A chave privada pode ser criada  com o comando ```sudo openssl-1.1 genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
 
