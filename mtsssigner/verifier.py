@@ -4,6 +4,7 @@ from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from mtsssigner.signer import K
 from multiprocessing import Pool
+from datetime import datetime
 
 import functools
 
@@ -95,6 +96,7 @@ class Verifier:
         verification_result = self.verify(message_file_path, signature_file_path, public_key_file_path)
         if verification_result[0] == False or verification_result[1] == []:
             return verification_result
+
         for k in verification_result[1]:
             i_rows = list()
             modified_blocks_minus_k = set(verification_result[1]) - {k}
@@ -146,6 +148,12 @@ class Verifier:
         return max([len(block) for block in self.blocks])
 
 def return_if_correct_b(b: int, verifier: Verifier, concatenation: bytearray, k_index:int, i: int, k: int) -> Tuple[bool, int]:
+    
+    if (b % 5000000) == 0:
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        print(f"Current Time = {current_time}, b = {b}")
+
     hash_k = bytearray(SHA256.new(int_to_bytes(b)).digest())
     concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
     rebuilt_corrected_test = SHA256.new(concatenation).digest()

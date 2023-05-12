@@ -6,6 +6,7 @@ import matplotlib.pylab as pylab
 import numpy
 import matplotlib
 from mtsssigner.utils.cff_analysis_utils import get_max_d_proportion
+from mtsssigner.signer import get_blocks_from_xml_file
 
 # figure, ax = plot.subplots(subplot_kw={"projection": "3d"})
 
@@ -75,4 +76,7 @@ from mtsssigner.utils.cff_analysis_utils import get_max_d_proportion
 # fig.tight_layout()
 # plot.show()
 
-print(get_max_d_proportion())
+# print(get_max_d_proportion())
+xml_blocks = get_blocks_from_xml_file("./tests/sample_xml.xml", True)
+print(xml_blocks)
+print(len(xml_blocks))

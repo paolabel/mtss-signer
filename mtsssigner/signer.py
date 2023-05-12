@@ -12,6 +12,10 @@ from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
+from typing import List
+
+from xml.etree import ElementTree
+
 K = 3
 
 # sha256(sha2-256) -> 256 bits de saída -> 32 bytes
@@ -61,7 +65,7 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     open_pk_command = f"sudo openssl rsa -in {private_key_path}"
     process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE)
     openssl_stdout = str(process.stdout)[2:-3]
-    private_key_str = get_correct_private_key_str_from_openssl_stdout(openssl_stdout)
+    private_key_str = __get_correct_private_key_str_from_openssl_stdout(openssl_stdout)
 
     private_key_password = getpass("Enter private key password again:")
     private_key: RsaKey = RSA.import_key(private_key_str, private_key_password)
@@ -77,10 +81,39 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
 
     return signature
 
-def get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str):
+def __get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str) -> str:
     lines_key = openssl_stdout.split("\\n")
     private_key_str = lines_key[0] + "\n"
     for line in range(len(lines_key) - 2):
         private_key_str += lines_key[line + 1]
     private_key_str += "\n" + lines_key[-1]
     return private_key_str
+
+def __get_blocks_from_txt_file(txt_file_path: str) -> List[str]:
+    with open(txt_file_path, "r") as txt_file:
+        message: str = txt_file.read()
+    return message.split("\n")
+
+def get_blocks_from_xml_file(xml_file_path: str, ignore_identation: bool = False) -> List[str]:
+    with open(xml_file_path, "r") as xml_file:
+        message: str = xml_file.read()
+    ElementTree.fromstring(message)
+    message = message.replace("\n", "")
+    message = message.replace("\t", "")
+    delimiter = "<"
+    blocks = [delimiter+block for block in message.split(delimiter)]
+    index = 1
+    grouped_blocks = [blocks[1]]
+    while index < len(blocks[1:]):
+        if blocks[index][:2] == "</" and blocks[index+1][:2] == "</":
+            grouped_blocks.append(blocks[index].rstrip())
+            grouped_blocks.append(blocks[index+1].rstrip())
+            index +=2
+        elif blocks[index+1][:2] == "</":
+            grouped_tag = blocks[index]+blocks[index+1]
+            grouped_blocks.append(grouped_tag.rstrip())
+            index+=2
+        else:
+            grouped_blocks.append(blocks[index].rstrip())
+            index +=1
+    return grouped_blocks
