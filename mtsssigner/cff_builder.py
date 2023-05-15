@@ -31,7 +31,7 @@ def get_x_set(field: FieldArray) -> List[list]:
 
 def create_cff(q: int, k:int) -> List[list]:
     d: int = get_d(q, k)
-    if d == 1:
+    if d == 1 or k < 2:
         return create_1_cff(q**k)
     else:
         return create_polynomial_cff(q, k)

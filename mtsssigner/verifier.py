@@ -2,7 +2,6 @@ from Crypto.PublicKey import RSA
 from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
-from mtsssigner.signer import K
 from multiprocessing import Pool
 from datetime import datetime
 
@@ -13,6 +12,7 @@ from typing import List, Tuple
 from math import sqrt
 
 from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, get_d
+from mtsssigner.utils.file_utils import *
 
 DIGEST_SIZE = 256
 DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
@@ -26,8 +26,8 @@ class Verifier:
     corrected = dict()
 
     def verify(self, message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
-        with open(message_file_path, "r") as message_file:
-            self.message = message_file.read()
+
+        self.message, self.blocks= get_message_and_blocks_from_file(message_file_path)
 
         with open(signature_file_path, "rb") as signature_file:
             signature: bytearray = signature_file.read()
@@ -148,7 +148,7 @@ class Verifier:
         return max([len(block) for block in self.blocks])
 
 def return_if_correct_b(b: int, verifier: Verifier, concatenation: bytearray, k_index:int, i: int, k: int) -> Tuple[bool, int]:
-    
+
     if (b % 5000000) == 0:
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")

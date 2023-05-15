@@ -2,8 +2,11 @@ import sys
 import subprocess
 
 from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, create_1_cff
+from mtsssigner.utils.file_utils import *
 
 from math import sqrt
+
+from numpy import floor
 
 from getpass import getpass
 
@@ -12,28 +15,25 @@ from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
-from typing import List
-
-from xml.etree import ElementTree
-
-K = 3
+DIGEST_SIZE = 256
+DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
 # sha256(sha2-256) -> 256 bits de saída -> 32 bytes
 # https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si
-def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_modifications: int = 0) -> bytearray:
-    with open(message_file_path, "r") as message_file:
-        message: str = message_file.read()
-    blocks: list = message.split('\n')
+def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0, max_modifications: int = 0, k: int = 0) -> bytearray:
 
-    # number = int.from_bytes(bytes(blocks[4], "utf-8"), byteorder=sys.byteorder)
-    # print(number)
-    # print(bin(number))
+    message, blocks= get_message_and_blocks_from_file(message_file_path)
+    private_key: RsaKey = __get_private_key_from_file(private_key_path)
 
     cff: list(list) = [[]]
     cff_dimensions = (0, 0)
 
-    if (max_tests > 0):
-        q: int = int(sqrt(max_tests))
+    if (max_size_bytes > 0):
+        key_modulus = private_key.n.bit_length()
+        rsa_signature_output_bytes = key_modulus/8
+        message_hash_bytes = DIGEST_SIZE_BYTES
+        space_for_tests = max_size_bytes - rsa_signature_output_bytes - message_hash_bytes
+        q = int(sqrt(floor(space_for_tests/DIGEST_SIZE_BYTES)))
         b: int = len(blocks)
         k: int = get_k_from_b_and_q(b, q)
         cff = create_cff(q, k)
@@ -41,6 +41,8 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     elif (max_modifications == 1):
         cff = create_1_cff(len(blocks))
         cff_dimensions = (len(cff) , len(blocks))
+    elif (k > 0):
+        pass
     # elif (max_modifications > 0):
     #   b:int = len(blocks)
     #   q: int = get_q_from_error_and_block_number(max_modifications, b)
@@ -62,24 +64,21 @@ def sign(message_file_path: str, private_key_path: str, max_tests: int = 0, max_
     message_hash = SHA256.new(message.encode()).digest()
     signature += message_hash
 
+    t_hash = SHA256.new(signature)
+    signed_t = pkcs1_15.new(private_key).sign(t_hash)
+    signature += signed_t
+
+    write_signature_to_file(signature, message_file_path)
+
+    return signature
+
+def __get_private_key_from_file(private_key_path: str) -> RsaKey:
     open_pk_command = f"sudo openssl rsa -in {private_key_path}"
     process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE)
     openssl_stdout = str(process.stdout)[2:-3]
     private_key_str = __get_correct_private_key_str_from_openssl_stdout(openssl_stdout)
-
     private_key_password = getpass("Enter private key password again:")
-    private_key: RsaKey = RSA.import_key(private_key_str, private_key_password)
-    t_hash = SHA256.new(signature)
-    signed_t = pkcs1_15.new(private_key).sign(t_hash)
-
-    signature += signed_t
-
-    signature_file_path = message_file_path.rsplit(".", 1)[0] + "_signature.mts"
-
-    with open(signature_file_path, "wb") as signature_file:
-        signature_file.write(signature)
-
-    return signature
+    return RSA.import_key(private_key_str, private_key_password)
 
 def __get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str) -> str:
     lines_key = openssl_stdout.split("\\n")
@@ -88,32 +87,3 @@ def __get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str) -> st
         private_key_str += lines_key[line + 1]
     private_key_str += "\n" + lines_key[-1]
     return private_key_str
-
-def __get_blocks_from_txt_file(txt_file_path: str) -> List[str]:
-    with open(txt_file_path, "r") as txt_file:
-        message: str = txt_file.read()
-    return message.split("\n")
-
-def get_blocks_from_xml_file(xml_file_path: str, ignore_identation: bool = False) -> List[str]:
-    with open(xml_file_path, "r") as xml_file:
-        message: str = xml_file.read()
-    ElementTree.fromstring(message)
-    message = message.replace("\n", "")
-    message = message.replace("\t", "")
-    delimiter = "<"
-    blocks = [delimiter+block for block in message.split(delimiter)]
-    index = 1
-    grouped_blocks = [blocks[1]]
-    while index < len(blocks[1:]):
-        if blocks[index][:2] == "</" and blocks[index+1][:2] == "</":
-            grouped_blocks.append(blocks[index].rstrip())
-            grouped_blocks.append(blocks[index+1].rstrip())
-            index +=2
-        elif blocks[index+1][:2] == "</":
-            grouped_tag = blocks[index]+blocks[index+1]
-            grouped_blocks.append(grouped_tag.rstrip())
-            index+=2
-        else:
-            grouped_blocks.append(blocks[index].rstrip())
-            index +=1
-    return grouped_blocks
