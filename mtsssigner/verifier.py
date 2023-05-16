@@ -11,7 +11,7 @@ from typing import List, Tuple
 
 from math import sqrt
 
-from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, get_d
+from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_d, create_1_cff
 from mtsssigner.utils.file_utils import *
 
 DIGEST_SIZE = 256
@@ -50,24 +50,27 @@ class Verifier:
             return (False, [])
 
         message_hash = SHA256.new(self.message.encode()).digest()
-        signature_message_hash = t[-int(DIGEST_SIZE/8):]
+        signature_message_hash = t[-int(DIGEST_SIZE_BYTES):]
 
         if signature_message_hash == message_hash:
             print("The message was not modified and the signature is valid")
             return (True, [])
 
-        joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE/8)]
-        self.hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE/8)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE/8))]
+        joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE_BYTES)]
+        self.hashed_tests: List[bytearray] = [joined_hashed_tests[i:i+int(DIGEST_SIZE_BYTES)] for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE_BYTES))]
 
         number_of_tests = len(self.hashed_tests)
-        self.blocks: list = self.message.split('\n')
         number_of_blocks = len(self.blocks)
+        print(f"n tests = {number_of_tests}")
 
         q: int = int(sqrt(number_of_tests))
-        b: int = number_of_blocks
-        k: int = get_k_from_b_and_q(b, q)
+        n: int = number_of_blocks
+        k: int = get_k_from_n_and_q(n, q)
         d: int = get_d(q, k)
-        self.cff = create_cff(q, k)
+        if d < 2:
+            self.cff = create_1_cff(n)
+        else:
+            self.cff = create_cff(q, k)
         rebuilt_tests: List[str] = list()
         for test in range(number_of_tests):
             concatenation = bytes()

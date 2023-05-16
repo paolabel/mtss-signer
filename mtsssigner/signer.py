@@ -1,7 +1,7 @@
 import sys
 import subprocess
 
-from mtsssigner.cff_builder import create_cff, get_k_from_b_and_q, create_1_cff
+from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_q_from_k_and_n, create_1_cff
 from mtsssigner.utils.file_utils import *
 
 from math import sqrt
@@ -18,15 +18,19 @@ from Crypto.Hash import SHA256
 DIGEST_SIZE = 256
 DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
+# 100Mb = 104,857,600 Bytes
+# = 3,276,797 testes p/ chave de 2048 bits
+
 # sha256(sha2-256) -> 256 bits de saída -> 32 bytes
 # https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si
-def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0, max_modifications: int = 0, k: int = 0) -> bytearray:
+def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0, k: int = 0) -> bytearray:
 
     message, blocks= get_message_and_blocks_from_file(message_file_path)
     private_key: RsaKey = __get_private_key_from_file(private_key_path)
 
+    n: int = len(blocks)
+
     cff: list(list) = [[]]
-    cff_dimensions = (0, 0)
 
     if (max_size_bytes > 0):
         key_modulus = private_key.n.bit_length()
@@ -34,20 +38,17 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
         message_hash_bytes = DIGEST_SIZE_BYTES
         space_for_tests = max_size_bytes - rsa_signature_output_bytes - message_hash_bytes
         q = int(sqrt(floor(space_for_tests/DIGEST_SIZE_BYTES)))
-        b: int = len(blocks)
-        k: int = get_k_from_b_and_q(b, q)
+        k = get_k_from_n_and_q(n, q)
         cff = create_cff(q, k)
-        cff_dimensions = (q**2, q**k)
-    elif (max_modifications == 1):
-        cff = create_1_cff(len(blocks))
-        cff_dimensions = (len(cff) , len(blocks))
-    elif (k > 0):
-        pass
-    # elif (max_modifications > 0):
-    #   b:int = len(blocks)
-    #   q: int = get_q_from_error_and_block_number(max_modifications, b)
-    #   cff = create_cff(q, get_k_from_b_and_q(b, q))
+    elif (k == 1):
+        cff = create_1_cff(n)
+    elif (k > 1):
+        q = get_q_from_k_and_n(k, n)
+        cff = create_cff(q, k)
+    else:
+        raise Exception("Either max size or 'K' value must be provided")
 
+    cff_dimensions = (len(cff), n)
     tests = list()
 
     for test in range(cff_dimensions[0]):

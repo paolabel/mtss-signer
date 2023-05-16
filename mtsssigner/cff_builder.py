@@ -14,13 +14,12 @@ from math import inf, sqrt, log, comb
 import itertools
 import numpy
 import sys
-from mtsssigner.utils.math_utils import get_all_coefficient_combinations_in_field, get_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
+from mtsssigner.utils.math_utils import get_all_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
 from mtsssigner.utils.prime_utils import is_prime_power
 from numpy.polynomial import Polynomial
 
 def get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
-    polinomial_ring_coeffs: list[list] = get_all_coefficient_combinations_in_field(field)
-    polinomial_coeffs_with_deg_up_to_k = get_polynomials_with_deg_up_to_k(polinomial_ring_coeffs, k)
+    polinomial_coeffs_with_deg_up_to_k: list[list] = get_all_polynomials_with_deg_up_to_k(field, k)
     b_set = [Polynomial(coefficients) for coefficients in polinomial_coeffs_with_deg_up_to_k]
     return b_set
 
@@ -29,14 +28,14 @@ def get_x_set(field: FieldArray) -> List[list]:
     result = itertools.product(field_elements, repeat=2)
     return [tuple(element) for element in result]
 
-def create_cff(q: int, k:int) -> List[list]:
+def create_cff(q: int, k:int) -> List[List[int]]:
     d: int = get_d(q, k)
     if d == 1 or k < 2:
         return create_1_cff(q**k)
     else:
         return create_polynomial_cff(q, k)
 
-def create_1_cff(n: int) -> List[list]:
+def create_1_cff(n: int) -> List[List[int]]:
     t: int = get_t_for_1_cff(n)
     tests: List[list] = get_1_cff_columns(t)
     cff = numpy.zeros((t,n), dtype=int)
@@ -45,10 +44,9 @@ def create_1_cff(n: int) -> List[list]:
             cff[incidence][block] = 1
     return cff
 
-def get_t_for_1_cff(n: int):
+def get_t_for_1_cff(n: int) -> int:
     # binomial coefs. values for (t floor(t/2))
     # binomial_coefficient_results[2] = binomial coefficient (2 1)
-    # espera-se que não será assinado documento com mais de 6435 blocos 
     binomial_coefficient_results = [1, 1, 2, 3, 6, 10, 20, 35, 70, 126, 252, 462, 924, 1716, 3432, 6435]
     if n > 6435:
         t = 15
@@ -62,11 +60,11 @@ def get_t_for_1_cff(n: int):
             if binomial_coefficient_results[index] >= n:
                 return index
 
-def get_1_cff_columns(t: int):
+def get_1_cff_columns(t: int) -> List[int]:
     result = itertools.combinations(range(t), int(numpy.floor(t/2)))
     return list(result)
 
-def create_polynomial_cff(q: int, k: int) -> List[list]:
+def create_polynomial_cff(q: int, k: int) -> List[List[int]]:
     assert is_prime_power(q)
     assert k >= 2
 
@@ -85,14 +83,17 @@ def create_polynomial_cff(q: int, k: int) -> List[list]:
 
     return cff
 
-def get_q(k:int, d: int):
+def get_q(k:int, d: int) -> int:
     q:int = d(k-1) + 1
     return q
 
-def get_q_from_error_and_block_number(d: int, b: int):
-    pass
+def get_q_from_k_and_n(k:int, n:int) -> int:
+    q = round(numpy.power(n, (1/k)))
+    if q**k != n:
+        raise Exception("Provided 'K' is not compatible with block number")
+    return q
 
-def get_d(q:int, k:int):
+def get_d(q:int, k:int) -> int:
     if k < 2:
         return 0
     if not is_prime_power(q):
@@ -100,14 +101,14 @@ def get_d(q:int, k:int):
     d: int = int(numpy.floor((q-1)/(k-1)))
     return d 
 
-def get_d_from_test_and_block_number(t: int, b: int):
+def get_d_from_test_and_block_number(t: int, n: int) -> int:
     q: int = int(sqrt(t))
     assert is_prime_power(q)
-    k: int = get_k_from_b_and_q(b, q)
+    k: int = get_k_from_n_and_q(n, q)
     return get_d(q, k)
 
-def get_k_from_b_and_q(b: int, q: int):
-    return int(log(b,q))
+def get_k_from_n_and_q(n: int, q: int) -> int:
+    return int(log(n,q))
 
 if __name__ == '__main__':
     numpy.set_printoptions(threshold=sys.maxsize)

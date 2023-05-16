@@ -23,7 +23,7 @@ if __name__ == '__main__':
         if flag == "-s":
             sign(message_file_path, key_file_path, max_size_bytes=number)
         elif flag == "-k":
-            sign(message_file_path, key_file_path, max_modifications=number)
+            sign(message_file_path, key_file_path, k=number)
         else:
             raise ValueError("Invalid option for sign operation")
     elif operation == "verify":
