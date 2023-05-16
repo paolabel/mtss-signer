@@ -65,14 +65,20 @@ def get_message_and_blocks_from_file(message_file_path: str) -> Tuple[str, List[
 #     else:
 #         return get_smaller_blocks(halved_blocks)
 
+def get_signature_file_path(message_file_path: str) -> str:
+    return message_file_path.rsplit(".", 1)[0] + "_signature.mts"
+
+def get_correction_file_path(message_file_path:str, file_type: str) -> str:
+    return message_file_path.rsplit(".", 1)[0] + f"_corrected.{file_type}"
+
 def write_signature_to_file(signature: bytearray, message_file_path: str):
-    signature_file_path = message_file_path.rsplit(".", 1)[0] + "_signature.mts"
+    signature_file_path = get_signature_file_path(message_file_path)
     with open(signature_file_path, "wb") as signature_file:
         signature_file.write(signature)
 
 def write_correction_to_file(message_file_path: str, content: str, file_type: str):
     if file_type != "txt" or file_type != "xml":
         raise Exception("Wrong file type")
-    correction_file_path = message_file_path.rsplit(".", 1)[0] + f"_corrected.{file_type}"
+    correction_file_path = get_correction_file_path(message_file_path, file_type)
     with open(correction_file_path, "w") as correction_file:
         correction_file.write(content)

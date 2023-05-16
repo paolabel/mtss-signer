@@ -17,6 +17,7 @@ import sys
 from mtsssigner.utils.math_utils import get_all_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
 from mtsssigner.utils.prime_utils import is_prime_power
 from numpy.polynomial import Polynomial
+import mtsssigner.logger as logger
 
 def get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
     polinomial_coeffs_with_deg_up_to_k: list[list] = get_all_polynomials_with_deg_up_to_k(field, k)
@@ -87,10 +88,13 @@ def get_q(k:int, d: int) -> int:
     q:int = d(k-1) + 1
     return q
 
+# TODO calcular K compatível
 def get_q_from_k_and_n(k:int, n:int) -> int:
     q = round(numpy.power(n, (1/k)))
     if q**k != n:
-        raise Exception("Provided 'K' is not compatible with block number")
+        error_message = "Provided 'K' cannot provide answer compatible with block number"
+        logger.log_error(error_message)
+        raise Exception(error_message)
     return q
 
 def get_d(q:int, k:int) -> int:
@@ -107,8 +111,14 @@ def get_d_from_test_and_block_number(t: int, n: int) -> int:
     k: int = get_k_from_n_and_q(n, q)
     return get_d(q, k)
 
+# TODO calcular Q compatível
 def get_k_from_n_and_q(n: int, q: int) -> int:
-    return int(log(n,q))
+    k = round(log(n,q))
+    if q**k != n:
+        error_message = "Provided 'Q' cannot provide answer compatible with block number"
+        logger.log_error(error_message)
+        raise Exception(error_message)
+    return k
 
 if __name__ == '__main__':
     numpy.set_printoptions(threshold=sys.maxsize)

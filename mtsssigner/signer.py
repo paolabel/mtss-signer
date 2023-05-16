@@ -1,7 +1,7 @@
 import sys
 import subprocess
 
-from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_q_from_k_and_n, create_1_cff
+from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_q_from_k_and_n, create_1_cff, get_d
 from mtsssigner.utils.file_utils import *
 
 from math import sqrt
@@ -15,6 +15,8 @@ from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
+import mtsssigner.logger as logger
+
 DIGEST_SIZE = 256
 DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
@@ -27,16 +29,16 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
 
     message, blocks= get_message_and_blocks_from_file(message_file_path)
     private_key: RsaKey = __get_private_key_from_file(private_key_path)
+    key_modulus = private_key.n.bit_length()
 
     n: int = len(blocks)
 
     cff: list(list) = [[]]
 
     if (max_size_bytes > 0):
-        key_modulus = private_key.n.bit_length()
         rsa_signature_output_bytes = key_modulus/8
         message_hash_bytes = DIGEST_SIZE_BYTES
-        space_for_tests = max_size_bytes - rsa_signature_output_bytes - message_hash_bytes
+        space_for_tests = int(max_size_bytes - rsa_signature_output_bytes - message_hash_bytes)
         q = int(sqrt(floor(space_for_tests/DIGEST_SIZE_BYTES)))
         k = get_k_from_n_and_q(n, q)
         cff = create_cff(q, k)
@@ -46,9 +48,13 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
         q = get_q_from_k_and_n(k, n)
         cff = create_cff(q, k)
     else:
-        raise Exception("Either max size or 'K' value must be provided")
+        error_message = "Either max size or 'K' value must be provided"
+        logger.log_error(error_message)
+        raise Exception(error_message)
 
     cff_dimensions = (len(cff), n)
+    d = get_d(q, k) if k > 1 else 1
+    logger.log_signature_parameters(message_file_path, private_key_path, n, key_modulus, q, d ,k, len(cff), max_size_bytes)
     tests = list()
 
     for test in range(cff_dimensions[0]):

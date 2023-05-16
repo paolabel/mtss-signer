@@ -13,6 +13,7 @@ from math import sqrt
 
 from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_d, create_1_cff
 from mtsssigner.utils.file_utils import *
+import mtsssigner.logger as logger
 
 DIGEST_SIZE = 256
 DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
@@ -46,14 +47,16 @@ class Verifier:
         try:
             pkcs1_15.new(public_key).verify(t_hash, t_signature)
         except ValueError:
-            print("Signature could not be verified")
-            return (False, [])
+            verification_result = False
+            logger.log_nonmodified_verification_result(message_file_path, public_key_file_path, verification_result)
+            return (verification_result, [])
 
         message_hash = SHA256.new(self.message.encode()).digest()
         signature_message_hash = t[-int(DIGEST_SIZE_BYTES):]
 
         if signature_message_hash == message_hash:
-            print("The message was not modified and the signature is valid")
+            verification_result = True
+            logger.log_nonmodified_verification_result(message_file_path, public_key_file_path, verification_result)
             return (True, [])
 
         joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE_BYTES)]
@@ -61,7 +64,6 @@ class Verifier:
 
         number_of_tests = len(self.hashed_tests)
         number_of_blocks = len(self.blocks)
-        print(f"n tests = {number_of_tests}")
 
         q: int = int(sqrt(number_of_tests))
         n: int = number_of_blocks
@@ -89,9 +91,10 @@ class Verifier:
                         non_modified_blocks.append(block)
 
         modified_blocks = [block for block in range(number_of_blocks) if block not in non_modified_blocks]
+        modified_blocks_content = [self.blocks[block] for block in modified_blocks]
         result = len(modified_blocks) <= d
 
-        print(f"Resultado: {result}\nBlocos modificados: {modified_blocks}")
+        logger.log_localization_result(message_file_path, public_key_file_path, n, len(self.cff), d, q, k, result, modified_blocks, modified_blocks_content)
         return (result, modified_blocks)
 
     # retorna a mensagem corrigida em um arquivo
@@ -127,8 +130,7 @@ class Verifier:
             find_correct_b = functools.partial(return_if_correct_b, verifier=self, concatenation=bytearray(b''.join(i_concatenation)), k_index = k_index, i=i, k=k)
             process_pool_size = available_cpu_count()
             MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = self.get_max_block_length()
-            print(f"Limite de caracteres por linha para a correção: {MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS}")
-            print(f"Processos paralelos: {process_pool_size}")
+            logger.log_correction_parameters(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS, process_pool_size)
             with Pool(process_pool_size) as process_pool:
                 for result in process_pool.imap(
                     find_correct_b,
@@ -137,14 +139,14 @@ class Verifier:
                         if result[0] == True:
                             self.corrected[k] = True
                             self.blocks[k] = (int_to_bytes(result[1])).decode("utf-8")
-                            print(f"Bloco {k} foi corrigido")
+                            logger.log_block_correction(k, self.blocks[k])
                             break
         if any(correction == True for correction in self.corrected.values()):
             correction_file_path = message_file_path.rsplit(".", 1)[0] + "_corrected.txt"
             with open(correction_file_path, "w") as correction_file:
                 correction_file.write("\n".join(self.blocks))
         else:
-            print("Nenhum bloco foi corrigido")
+            logger.log_block_correction(-1)
         return verification_result
     
     def get_max_block_length(self):
@@ -153,9 +155,7 @@ class Verifier:
 def return_if_correct_b(b: int, verifier: Verifier, concatenation: bytearray, k_index:int, i: int, k: int) -> Tuple[bool, int]:
 
     if (b % 5000000) == 0:
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        print(f"Current Time = {current_time}, b = {b}")
+        logger.log_correction_progress(b)
 
     hash_k = bytearray(SHA256.new(int_to_bytes(b)).digest())
     concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
@@ -164,7 +164,7 @@ def return_if_correct_b(b: int, verifier: Verifier, concatenation: bytearray, k_
         if verifier.corrected[k] == False:
             return (True, b)
         else:
-            print("Houve colisão")
+            logger.log_collision(k, b)
             return (False, b)
 
 def int_to_bytes(number: int):
