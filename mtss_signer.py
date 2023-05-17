@@ -5,7 +5,7 @@ from datetime import timedelta
 from mtsssigner.signer import sign
 from mtsssigner.verifier import Verifier
 import mtsssigner.logger as logger
-from mtsssigner.utils.file_utils import get_signature_file_path, get_correction_file_path
+from mtsssigner.utils.file_and_block_utils import get_signature_file_path, get_correction_file_path, write_correction_to_file, write_signature_to_file
 
 from typing import List, Tuple
 
@@ -15,8 +15,8 @@ from typing import List, Tuple
 
 def __print_localization_result(result: Tuple[bool, List[int]]):
     signature_status = "Signature is valid" if result[0] == True else "Signature could not be verified"
-    localization_status = "message was not modified" if len(result[1]) == 0 else f"modified blocks = {result[1]}"
-    print(f"Verification result: {signature_status}, {localization_status}")
+    localization_status = "message was not modified" if len(result[1]) == 0 else f"Modified blocks = {result[1]}"
+    print(f"Verification result: {signature_status}; {localization_status}")
 
 if __name__ == '__main__':
 
@@ -31,7 +31,8 @@ if __name__ == '__main__':
         if not flag[0] == "-":
             raise ValueError("Invalid argument for flag")
         if flag == "-s":
-            sign(message_file_path, key_file_path, max_size_bytes=number)
+            signature = sign(message_file_path, key_file_path, max_size_bytes=number)
+            write_signature_to_file(signature, message_file_path)
             print(f"Signature written to {get_signature_file_path(message_file_path)}")
         elif flag == "-k":
             sign(message_file_path, key_file_path, k=number)
@@ -48,6 +49,11 @@ if __name__ == '__main__':
         signature_file_path = sys.argv[4]
         result = verifier.verify_and_correct(message_file_path, signature_file_path, key_file_path)
         __print_localization_result(result)
-        print(f"Correction written to {get_correction_file_path(message_file_path, message_file_path[-3:])}")
+        correction = result[2]
+        if correction != "":
+            write_correction_to_file(message_file_path, correction)
+            print(f"Correction written to {get_correction_file_path(message_file_path)}")
+        elif len(result[1]) > 0:
+            print(f"File {message_file_path} could not be corrected")
     end = timer()
     logger.log_execution_end(timedelta(seconds=end-start))

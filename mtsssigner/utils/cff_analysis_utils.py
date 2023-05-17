@@ -34,7 +34,7 @@ def get_max_d_proportion():
 # Returns a dict where the keys are the allowed number of modifications
 # and the values are the number of tests required to build the cff
 # for the desired number of blocks
-def get_possible_d_and_t_from_b(n: int) -> Dict:
+def get_possible_d_and_t_from_n(n: int) -> Dict:
     possible_d_and_t = dict()
     for q in basic_prime_power_sequence:
         k = log(n, q)
@@ -48,4 +48,4 @@ def get_possible_d_and_t_from_b(n: int) -> Dict:
     return possible_d_and_t
 
 if __name__ == '__main__':
-    print(get_possible_d_and_t_from_b(729))
+    print(get_possible_d_and_t_from_n(729))

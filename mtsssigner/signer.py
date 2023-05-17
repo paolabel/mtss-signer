@@ -2,7 +2,7 @@ import sys
 import subprocess
 
 from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_q_from_k_and_n, create_1_cff, get_d
-from mtsssigner.utils.file_utils import *
+from mtsssigner.utils.file_and_block_utils import *
 
 from math import sqrt
 
@@ -74,8 +74,6 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
     t_hash = SHA256.new(signature)
     signed_t = pkcs1_15.new(private_key).sign(t_hash)
     signature += signed_t
-
-    write_signature_to_file(signature, message_file_path)
 
     return signature
 

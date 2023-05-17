@@ -3,7 +3,6 @@ from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from multiprocessing import Pool
-from datetime import datetime
 
 import functools
 
@@ -12,7 +11,7 @@ from typing import List, Tuple
 from math import sqrt
 
 from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_d, create_1_cff
-from mtsssigner.utils.file_utils import *
+from mtsssigner.utils.file_and_block_utils import *
 import mtsssigner.logger as logger
 
 DIGEST_SIZE = 256
@@ -97,12 +96,15 @@ class Verifier:
         logger.log_localization_result(message_file_path, public_key_file_path, n, len(self.cff), d, q, k, result, modified_blocks, modified_blocks_content)
         return (result, modified_blocks)
 
-    # retorna a mensagem corrigida em um arquivo
-    def verify_and_correct(self, message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int]]:
+    def verify_and_correct(self, message_file_path: str, signature_file_path: str, public_key_file_path: str) -> Tuple[bool, List[int], str]:
         verification_result = self.verify(message_file_path, signature_file_path, public_key_file_path)
+        correction = ""
         if verification_result[0] == False or verification_result[1] == []:
-            return verification_result
+            return (verification_result[0], verification_result[1], correction)
 
+        process_pool_size = available_cpu_count()
+        MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = self.get_max_block_length()
+        logger.log_correction_parameters(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS, process_pool_size)
         for k in verification_result[1]:
             i_rows = list()
             modified_blocks_minus_k = set(verification_result[1]) - {k}
@@ -128,9 +130,6 @@ class Verifier:
             k_index = int((k_index*DIGEST_SIZE)/8)
 
             find_correct_b = functools.partial(return_if_correct_b, verifier=self, concatenation=bytearray(b''.join(i_concatenation)), k_index = k_index, i=i, k=k)
-            process_pool_size = available_cpu_count()
-            MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = self.get_max_block_length()
-            logger.log_correction_parameters(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS, process_pool_size)
             with Pool(process_pool_size) as process_pool:
                 for result in process_pool.imap(
                     find_correct_b,
@@ -142,13 +141,11 @@ class Verifier:
                             logger.log_block_correction(k, self.blocks[k])
                             break
         if any(correction == True for correction in self.corrected.values()):
-            correction_file_path = message_file_path.rsplit(".", 1)[0] + "_corrected.txt"
-            with open(correction_file_path, "w") as correction_file:
-                correction_file.write("\n".join(self.blocks))
+            correction = rebuild_content_from_blocks(self.blocks, message_file_path[-3:])
         else:
             logger.log_block_correction(-1)
-        return verification_result
-    
+        return (verification_result[0], verification_result[1], correction)
+
     def get_max_block_length(self):
         return max([len(block) for block in self.blocks])
 

@@ -68,10 +68,12 @@ def log_correction_parameters(s: int, process_pool_size: int):
                          f"Available parallel processes to realize the correction: {process_pool_size}\n"))
 
 def log_block_correction(block_number: int, correction: str = ""):
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
     if block_number > -1:
-        __write_to_log_file(f"Block {block_number} was corrected, correction value = '{correction}'\n")
+        __write_to_log_file(f"({current_time}) Block {block_number} was corrected, correction value = '{correction}'\n")
     else:
-        __write_to_log_file("No block could be corrected\n")
+        __write_to_log_file(f"{current_time} : No block could be corrected\n")
 
 def log_collision(block_number: int, collision: str):
     __write_to_log_file(f"Collision found for block {block_number}, collision value = '{collision}'\n")
