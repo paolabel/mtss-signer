@@ -17,13 +17,14 @@ from Crypto.Hash import SHA256
 
 import mtsssigner.logger as logger
 
+# Digest size for the chosen hash function (SHA256)
 DIGEST_SIZE = 256
 DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
-# 100Mb = 104,857,600 Bytes
-# = 3,276,797 testes p/ chave de 2048 bits
-
-# sha256(sha2-256) -> 256 bits de saída -> 32 bytes
+# Signs a file using a modification tolerant signature scheme, which
+# allows for localization and correction of modifications to the file
+# within certain limitations. The number of blocks created from the file
+# (their creation depends on the file type) must be a prime power.
 # https://crypto.stackexchange.com/questions/95878/does-the-signature-length-of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si
 def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0, k: int = 0) -> bytearray:
 
@@ -54,7 +55,7 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
 
     cff_dimensions = (len(cff), n)
     d = get_d(q, k) if k > 1 else 1
-    logger.log_signature_parameters(message_file_path, private_key_path, n, key_modulus, q, d ,k, len(cff), max_size_bytes)
+    logger.log_signature_parameters(message_file_path, private_key_path, n, key_modulus, q, d ,k, len(cff), blocks, max_size_bytes)
     tests = list()
 
     for test in range(cff_dimensions[0]):
@@ -77,6 +78,7 @@ def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0,
 
     return signature
 
+# Retrieves a private key from password-protected PEM file using OpenSSL
 def __get_private_key_from_file(private_key_path: str) -> RsaKey:
     open_pk_command = f"sudo openssl rsa -in {private_key_path}"
     process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE)
@@ -85,6 +87,8 @@ def __get_private_key_from_file(private_key_path: str) -> RsaKey:
     private_key_password = getpass("Enter private key password again:")
     return RSA.import_key(private_key_str, private_key_password)
 
+# Returns the correctly formatted string for creating
+# a private key object from the OpenSSL process output
 def __get_correct_private_key_str_from_openssl_stdout(openssl_stdout: str) -> str:
     lines_key = openssl_stdout.split("\\n")
     private_key_str = lines_key[0] + "\n"

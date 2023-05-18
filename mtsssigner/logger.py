@@ -30,7 +30,7 @@ def log_execution_end(elapsed_time: timedelta):
 
 # TODO mostrar quando número de blocos foi arredondado para combinar com K
 # TODO mostrar quando k resultante foi incompatível com tamanho+blocos compatível
-def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key_modulus:int, q:int, d:int, k:int, t:int, max_size_bytes = 0):
+def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key_modulus:int, q:int, d:int, k:int, t:int, blocks: List[str], max_size_bytes = 0):
     log_content = f"Signed file = {signed_file}; Private key file = {private_key_file}\n"
     log_content += f"Number of blocks = {n}; Private key modulus = {key_modulus}\n"
     if max_size_bytes > 0:
@@ -43,6 +43,9 @@ def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key
     else:
         log_content += f"Supplied k = {k}\n"
     log_content += f"Resulting CFF = {d}-CFF({t}, {n}), q = {q}, k = {k}\n"
+    modifiable_blocks_proportion = round(d/n, 4)
+    log_content += f"Proportion of modifiable blocks: {modifiable_blocks_proportion}%\n"
+    log_content += f"Blocks:\n{blocks}\n"
     __write_to_log_file(log_content)
 
 def log_nonmodified_verification_result(verified_file: str, public_key_file: str, result: bool):
