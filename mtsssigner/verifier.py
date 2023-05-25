@@ -76,6 +76,12 @@ class Verifier:
         else:
             self.cff = create_cff(q, k)
         rebuilt_tests: List[str] = list()
+
+        if number_of_tests != len(self.cff):
+            logger.log_error("The number of blocks of the modified message is different from the original message.")
+            return (False, [])
+
+        print(f"({number_of_tests},{number_of_blocks})")
         for test in range(number_of_tests):
             concatenation = bytes()
             for block in range(number_of_blocks):

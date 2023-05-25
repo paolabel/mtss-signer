@@ -108,17 +108,30 @@ def get_q(k:int, d: int) -> int:
     q:int = d(k-1) + 1
     return q
 
-# Gets the q value for the d-CFF(q^2,n=q^k) according to
-# a supplied k and the desired number of blocks (n)
+# Gets the q value for the d-CFF(q^2,n=q^k) according to a supplied k
+# and the desired number of blocks (n). Available k values supplied in
+# case of incorrect k input are not correct for prime powers q^k whose
+# k contains more than 2 factors (e.g. 2^30)
 def get_q_from_k_and_n(k:int, n:int) -> int:
     q = round(numpy.power(n, (1/k)))
     if q**k != n:
         n_factors: dict = factorint(n)
         compatible_k = list()
-        for base, exponent in n_factors:
-            if exponent > 2 and numpy.floor((base-1)/(exponent-1)) >= 2 and is_prime_power(base):
-                compatible_k.append(exponent)
-        error_message = (f"Provided 'k' cannot provide answer compatible with block number. "
+        for exponent in n_factors.values():
+            exponent_factors = factorint(exponent)
+            compatible_k.append(exponent)
+            if len(exponent_factors) > 1:
+                for factor in exponent_factors:
+                    compatible_k.append(factor)
+                    if exponent_factors[factor] > 1:
+                        compatible_k.append(factor*exponent_factors[factor])
+                        factors = exponent_factors.keys()
+                        multiplication = 1
+                        for factor in factors:
+                            multiplication *= factor
+                        compatible_k.append(multiplication)
+        compatible_k.sort()
+        error_message = (f"Provided 'k' = {k} cannot provide answer compatible with block number = {n}. "
                          f"Compatible 'k' values may be one the following: {compatible_k}.")
         logger.log_error(error_message)
         raise Exception(error_message)
@@ -138,8 +151,10 @@ def get_k_from_n_and_q(n: int, q: int) -> int:
     k = round(log(n,q))
     if q**k != n:
         n_factors: dict = factorint(n)
-        error_message = (f"Provided 'q' cannot provide answer compatible with block number. "
-                         f"Compatible 'q' values may be one the following: {n_factors.keys()}.")
+        error_message = (f"\n   Provided 'q' = {q} cannot provide answer compatible with block number = {n}.\n"
+                         f"   Compatible 'q' values may be one the following: {list(n_factors.keys())}.\n"
+                          "   If you are signing a messgage with a desired maximum signature size, the size supplied is rounding to an incompatible number of tests.\n"
+                          "   If you are verifying a signature, the number of blocks of the modified file is different from the original message.")
         logger.log_error(error_message)
         raise Exception(error_message)
     return k

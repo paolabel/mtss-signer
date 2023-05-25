@@ -1,36 +1,37 @@
 from datetime import datetime
 from datetime import timedelta
-from typing import List
+from typing import List, Callable, Union
 from numpy import sqrt, floor
 
 LOG_FILE_PATH="./logs.txt"
 DIGEST_SIZE_BYTES = 256/8
 
-def log_correction_progress(b: int):
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    __write_to_log_file(f"Current time = {current_time}, correction operation number = {b}\n")
-
-def log_execution_start(operation: str):
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
+def log_program_input(input: List[str]) -> None:
+    input_str = " ".join(input)
     log_content = ("##############################\n"
-                  f"Start time = {current_time}\n"
-                  f"Operation: {operation}\n")
+                f"Command: {input_str}\n")
     __write_to_log_file(log_content)
-    
-def log_error(error: str):
-    __write_to_log_file(f"Error: {error}\n")
 
-def log_execution_end(elapsed_time: timedelta):
+def log_execution_start(operation: str) -> None:
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    log_content = (f"Start time = {current_time}\n"
+                   f"Operation: {operation}\n")
+    __write_to_log_file(log_content)
+
+def log_error(error: Union[str, Callable]) -> None:
+    if callable(error):
+        __write_to_log_file(error)
+    else:
+        __write_to_log_file(f"Error: {error}\n")
+
+def log_execution_end(elapsed_time: timedelta) -> None:
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     __write_to_log_file((f"End time = {current_time}\n"
                          f"Elapsed time: {elapsed_time}\n"))
 
-# TODO mostrar quando número de blocos foi arredondado para combinar com K
-# TODO mostrar quando k resultante foi incompatível com tamanho+blocos compatível
-def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key_modulus:int, q:int, d:int, k:int, t:int, blocks: List[str], max_size_bytes = 0):
+def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key_modulus:int, q:int, d:int, k:int, t:int, blocks: List[str], max_size_bytes = 0) -> None:
     log_content = f"Signed file = {signed_file}; Private key file = {private_key_file}\n"
     log_content += f"Number of blocks = {n}; Private key modulus = {key_modulus}\n"
     if max_size_bytes > 0:
@@ -48,7 +49,7 @@ def log_signature_parameters(signed_file: str, private_key_file: str, n:int, key
     log_content += f"Blocks:\n{blocks}\n"
     __write_to_log_file(log_content)
 
-def log_nonmodified_verification_result(verified_file: str, public_key_file: str, result: bool):
+def log_nonmodified_verification_result(verified_file: str, public_key_file: str, result: bool) -> None:
     log_content = f"Verified file = {verified_file}; Public key file = {public_key_file}\n"
     signature_status = "Valid" if result else "Invalid"
     log_content += f"Signature status: {signature_status}"
@@ -56,7 +57,7 @@ def log_nonmodified_verification_result(verified_file: str, public_key_file: str
         log_content += f"The message was not modified"
     __write_to_log_file(log_content)
 
-def log_localization_result(verified_file: str, public_key_file: str, n:int, t:int, d: int, q:int, k:int, result: bool, modified_blocks: List[int], modified_blocks_content: List[str]):
+def log_localization_result(verified_file: str, public_key_file: str, n:int, t:int, d: int, q:int, k:int, result: bool, modified_blocks: List[int], modified_blocks_content: List[str]) -> None:
     log_content = f"Verified file = {verified_file}; Public key file = {public_key_file}\n"
     log_content += f"Number of blocks = {n}, Number of tests = {t}, Max modifications = {d}\n"
     log_content += f"Resulting CFF = {d}-CFF({t}, {n}), q = {q}, k = {k}\n"
@@ -66,11 +67,16 @@ def log_localization_result(verified_file: str, public_key_file: str, n:int, t:i
     log_content += f"Localization result: {localization_result}\n"
     __write_to_log_file(log_content)
 
-def log_correction_parameters(s: int, process_pool_size: int):
+def log_correction_parameters(s: int, process_pool_size: int) -> None:
     __write_to_log_file((f"Max ASCII (1 byte) characters to correct per block = {s}\n"
                          f"Available parallel processes to realize the correction: {process_pool_size}\n"))
 
-def log_block_correction(block_number: int, correction: str = ""):
+def log_correction_progress(b: int) -> None:
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    __write_to_log_file(f"Current time = {current_time}, correction operation number = {b}\n")
+
+def log_block_correction(block_number: int, correction: str = "") -> None:
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     if block_number > -1:
@@ -78,10 +84,13 @@ def log_block_correction(block_number: int, correction: str = ""):
     else:
         __write_to_log_file(f"{current_time} : No block could be corrected\n")
 
-def log_collision(block_number: int, collision: str):
+def log_collision(block_number: int, collision: str) -> None:
     __write_to_log_file(f"Collision found for block {block_number}, collision value = '{collision}'\n")
 
-def __write_to_log_file(content: str):
+def __write_to_log_file(content: Union[str, Callable]) -> None:
     log_file = open(LOG_FILE_PATH, "a")
-    log_file.write(content)
+    if callable(content):
+        content(file=log_file)
+    else:
+        log_file.write(content)
     log_file.close()

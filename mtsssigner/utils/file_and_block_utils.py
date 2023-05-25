@@ -88,7 +88,7 @@ def get_signature_file_path(message_file_path: str) -> str:
 # Gets the file path to write the message correction to,
 # according to the original path of the message.
 def get_correction_file_path(message_file_path:str) -> str:
-    file_type = message_file_path[-3:0]
+    file_type = message_file_path[-3:]
     return message_file_path.rsplit(".", 1)[0] + f"_corrected.{file_type}"
 
 # Writes the binary signature to a file, according
@@ -104,7 +104,7 @@ def write_correction_to_file(message_file_path: str, content: str):
     correction_file_path = get_correction_file_path(message_file_path)
     with open(correction_file_path, "w") as correction_file:
         correction_file.write(content)
-        
+
 # Returns smaller blocks to allow correction of long blocks.
 # Wouldn't work unless the modifications maintain the original number of characters
 #

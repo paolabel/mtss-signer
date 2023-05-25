@@ -3,6 +3,7 @@ import subprocess
 
 from mtsssigner.cff_builder import create_cff, get_k_from_n_and_q, get_q_from_k_and_n, create_1_cff, get_d
 from mtsssigner.utils.file_and_block_utils import *
+from mtsssigner.utils.prime_utils import is_prime_power
 
 from math import sqrt
 
@@ -29,6 +30,8 @@ DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 def sign(message_file_path: str, private_key_path: str, max_size_bytes: int = 0, k: int = 0) -> bytearray:
 
     message, blocks= get_message_and_blocks_from_file(message_file_path)
+    if not is_prime_power(len(blocks)):
+        raise Exception(f"Number of blocks generated must be a prime power (Number of blocks = {len(blocks)})")
     private_key: RsaKey = __get_private_key_from_file(private_key_path)
     key_modulus = private_key.n.bit_length()
 
