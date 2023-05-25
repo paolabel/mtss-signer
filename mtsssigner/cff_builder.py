@@ -1,16 +1,17 @@
 
 from typing import List
+from math import sqrt, log, comb
+import itertools
 import galois
 from galois import FieldArray
-from math import inf, sqrt, log, comb
-import itertools
 import numpy
-import sys
-from mtsssigner.utils.math_utils import get_all_polynomials_with_deg_up_to_k, get_field_elements, get_polynomial_value_at_x
-from mtsssigner.utils.prime_utils import is_prime_power
 from numpy.polynomial import Polynomial
-import mtsssigner.logger as logger
 from sympy import factorint
+from mtsssigner import logger
+from mtsssigner.utils.math_utils import (get_all_polynomials_with_deg_up_to_k,
+                                        get_field_elements,
+                                        get_polynomial_value_at_x)
+from mtsssigner.utils.prime_utils import is_prime_power
 
 # Creates either a 1-CFF or a polynomial d-CFF, according to the obtainable
 # amount of max modifiable blocks (d) provided by the parameters q and k.
@@ -18,8 +19,7 @@ def create_cff(q: int, k:int) -> List[List[int]]:
     d: int = get_d(q, k)
     if d == 1 or k < 2:
         return create_1_cff(q**k)
-    else:
-        return create_polynomial_cff(q, k)
+    return create_polynomial_cff(q, k)
 
 # Creates an 1-CFF with the minimum amount of
 # tests possible (using Sperner set systems)
@@ -37,7 +37,8 @@ def create_1_cff(n: int) -> List[List[int]]:
 def get_t_for_1_cff(n: int) -> int:
     # List containing binomial coefs. values for (t floor(t/2))
     # Example: binomial_coefficient_results[2] = binomial coefficient (2 1)
-    binomial_coefficient_results = [1, 1, 2, 3, 6, 10, 20, 35, 70, 126, 252, 462, 924, 1716, 3432, 6435]
+    binomial_coefficient_results = [1, 1, 2, 3, 6, 10, 20, 35, 70, 126,
+                                    252, 462, 924, 1716, 3432, 6435]
     if n > 6435:
         t = 15
         result = 6435
@@ -45,10 +46,9 @@ def get_t_for_1_cff(n: int) -> int:
             t+= 1
             result = comb(t, numpy.floor(t/2))
         return t
-    else:
-        for index in range(1, len(binomial_coefficient_results)):
-            if binomial_coefficient_results[index] >= n:
-                return index
+    for index in range(1, len(binomial_coefficient_results)):
+        if binomial_coefficient_results[index] >= n:
+            return index
 
 # Returns the columns of an optimal 1-CFF, built using every
 # combination of floor(t/2) elements each from the column
@@ -77,7 +77,7 @@ def create_polynomial_cff(q: int, k: int) -> List[List[int]]:
 
     for test in range(cff_dimensions[0]):
         for block in range(cff_dimensions[1]):
-            if ((get_polynomial_value_at_x(b_set[block], x_set[test][0]) % q) == x_set[test][1]):
+            if (get_polynomial_value_at_x(b_set[block], x_set[test][0]) % q) == x_set[test][1]:
                 cff[test][block] = 1
 
     return cff
@@ -101,7 +101,7 @@ def get_d(q:int, k:int) -> int:
     if not is_prime_power(q):
         return 0
     d: int = int(numpy.floor((q-1)/(k-1)))
-    return d 
+    return d
 
 # Gets the q value for the d-CFF according to the relation d = floor((q-1)/(k-1))
 def get_q(k:int, d: int) -> int:
@@ -116,25 +116,29 @@ def get_q_from_k_and_n(k:int, n:int) -> int:
     q = round(numpy.power(n, (1/k)))
     if q**k != n:
         n_factors: dict = factorint(n)
-        compatible_k = list()
+        compatible_k = []
         for exponent in n_factors.values():
             exponent_factors = factorint(exponent)
             compatible_k.append(exponent)
-            if len(exponent_factors) > 1:
-                for factor in exponent_factors:
-                    compatible_k.append(factor)
-                    if exponent_factors[factor] > 1:
-                        compatible_k.append(factor*exponent_factors[factor])
-                        factors = exponent_factors.keys()
-                        multiplication = 1
-                        for factor in factors:
-                            multiplication *= factor
-                        compatible_k.append(multiplication)
+            if len(exponent_factors) == 1:
+                break
+            for factor in exponent_factors:
+                compatible_k.append(factor)
+                if exponent_factors[factor] == 1:
+                    continue
+                compatible_k.append(factor*exponent_factors[factor])
+                factors = exponent_factors.keys()
+                multiplication = 1
+                for factor in factors:
+                    multiplication *= factor
+                compatible_k.append(multiplication)
         compatible_k.sort()
-        error_message = (f"Provided 'k' = {k} cannot provide answer compatible with block number = {n}. "
-                         f"Compatible 'k' values may be one the following: {compatible_k}.")
+        error_message = (
+            f"Provided 'k' = {k} cannot provide answer compatible with block number = {n}.\n"
+            f"Compatible 'k' values may be one the following: {compatible_k}."
+        )
         logger.log_error(error_message)
-        raise Exception(error_message)
+        raise ValueError(error_message)
     return q
 
 # Gets the d value for the d-CFF(t=q^2,n=q^k) according to the
@@ -151,10 +155,14 @@ def get_k_from_n_and_q(n: int, q: int) -> int:
     k = round(log(n,q))
     if q**k != n:
         n_factors: dict = factorint(n)
-        error_message = (f"\n   Provided 'q' = {q} cannot provide answer compatible with block number = {n}.\n"
-                         f"   Compatible 'q' values may be one the following: {list(n_factors.keys())}.\n"
-                          "   If you are signing a messgage with a desired maximum signature size, the size supplied is rounding to an incompatible number of tests.\n"
-                          "   If you are verifying a signature, the number of blocks of the modified file is different from the original message.")
+        error_message = (
+            f"\n   Provided 'q' = {q} cannot provide answer compatible with block number = {n}.\n"
+            f"   Compatible 'q' values may be one the following: {list(n_factors.keys())}.\n"
+             "   If you are signing a messgage with a desired maximum signature size, the size "
+             "supplied is rounding to an incompatible number of tests.\n"
+             "   If you are verifying a signature, the number of blocks of the modified file is "
+             "different from the original message."
+        )
         logger.log_error(error_message)
-        raise Exception(error_message)
+        raise ValueError(error_message)
     return k

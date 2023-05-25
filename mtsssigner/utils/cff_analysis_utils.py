@@ -1,7 +1,7 @@
-import numpy
-from mtsssigner.cff_builder import get_d, get_t_for_1_cff
 from typing import Dict
 from math import log
+import numpy
+from mtsssigner.cff_builder import get_d, get_t_for_1_cff
 from mtsssigner.utils.prime_utils import basic_prime_power_sequence, is_prime_power
 
 # Return a grid where the lines are q values, columns are k values,
@@ -23,7 +23,7 @@ def get_results_grid():
 # Returns a dict containing the total amount and proportion
 # of modifiable blocks for a given number of blocks
 def get_max_d_proportion():
-    proportions = dict()
+    proportions = {}
     k = 3
     for q in range(102):
         if not is_prime_power(q):
@@ -39,7 +39,7 @@ def get_max_d_proportion():
 # Returns a dict which contain the polynomial CFFs that can be created with the number
 # of blocks supplied, indexed by their max number of allowed modification of blocks (d)
 def get_possible_CFFs_from_n(n: int) -> Dict:
-    possible_d_and_t = dict()
+    possible_d_and_t = {}
     for q in basic_prime_power_sequence:
         k = log(n, q)
         if k - int(k) == 0.0 and k > 1:

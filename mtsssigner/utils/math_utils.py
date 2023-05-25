@@ -1,4 +1,3 @@
-from itertools import chain, combinations
 import itertools
 from typing import List
 from numpy.polynomial import Polynomial
@@ -12,7 +11,7 @@ def get_all_polynomials_with_deg_up_to_k(field: FieldArray, k: int) -> List[list
     # assume que sempre vai retornar a mesma ordem
     field_elements = get_field_elements(field)
     result = itertools.product(field_elements, repeat=k)
-    returnval = list()
+    returnval = []
     for element in result:
         coefs = list(element)
         coefs.reverse()
@@ -30,7 +29,7 @@ def get_polynomial_value_at_x(polynomial: Polynomial, x: int) -> int:
 def get_field_elements(field: FieldArray) -> List[int]:
     order: int = field.order
     # Assumes that the elements of a finite field are always continuous
-    field_elements: list = [x for x in range(order)]
+    field_elements: list = list(range(order))
     return field_elements
 
 # Pretty prints a list of Polynomial objects

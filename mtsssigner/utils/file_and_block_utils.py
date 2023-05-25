@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 # Builds a list of blocks and content string from a txt file.
 # For txt files, each block is a line of text.
 def __get_message_and_blocks_from_txt_file(txt_file_path: str) -> Tuple[str, List[str]]:
-    with open(txt_file_path, "r") as txt_file:
+    with open(txt_file_path, "r", encoding="utf-8") as txt_file:
         message: str = txt_file.read()
     return (message, message.split("\n"))
 
@@ -22,7 +22,7 @@ def __rebuild_txt_content_from_blocks(blocks: List[str]) -> str:
 # (start/end), while maitaining the inheritance structure of the
 # original file. The process of building the blocks strips the file of identation.
 def __get_message_and_blocks_from_xml_file(xml_file_path: str) -> Tuple[str, List[str]]:
-    with open(xml_file_path, "r") as xml_file:
+    with open(xml_file_path, "r", encoding="utf-8") as xml_file:
         message: str = xml_file.read()
     ElementTree.fromstring(message)
     message = message.replace("\n", "")
@@ -53,10 +53,9 @@ def __rebuild_xml_content_from_blocks(blocks: List[str], ignore_identation=True)
     unindented_xml = "".join(blocks)
     if ignore_identation:
         return unindented_xml
-    else:
-        xml_tree = ElementTree.fromstring(unindented_xml)
-        xml_tree = ElementTree.indent(xml_tree, space="\t\t")
-        return ElementTree.tostring(xml_tree)
+    xml_tree = ElementTree.fromstring(unindented_xml)
+    ElementTree.indent(xml_tree, space="\t\t")
+    return ElementTree.tostring(xml_tree)
 
 # Rebuilds the original message from its blocks and given file type.
 def rebuild_content_from_blocks(blocks: List[str], file_type:str) -> str:
@@ -65,7 +64,7 @@ def rebuild_content_from_blocks(blocks: List[str], file_type:str) -> str:
     elif file_type == "xml":
         content = __rebuild_xml_content_from_blocks(blocks)
     else:
-        raise Exception("Unsupported file type (must be txt or xml)")
+        raise ValueError("Unsupported file type (must be txt or xml)")
     return content
 
 # Builds a list of blocks and content string from a file.
@@ -77,7 +76,7 @@ def get_message_and_blocks_from_file(message_file_path: str) -> Tuple[str, List[
     elif file_type == "xml":
         message, blocks = __get_message_and_blocks_from_xml_file(message_file_path)
     else:
-        raise Exception("Unsupported file type (must be txt or xml)")
+        raise ValueError("Unsupported file type (must be txt or xml)")
     return (message, blocks)
 
 # Gets the file path to write the message signature to,
@@ -102,7 +101,7 @@ def write_signature_to_file(signature: bytearray, message_file_path: str):
 # according to the original path of the message.
 def write_correction_to_file(message_file_path: str, content: str):
     correction_file_path = get_correction_file_path(message_file_path)
-    with open(correction_file_path, "w") as correction_file:
+    with open(correction_file_path, "w", encoding="utf-8") as correction_file:
         correction_file.write(content)
 
 # Returns smaller blocks to allow correction of long blocks.
