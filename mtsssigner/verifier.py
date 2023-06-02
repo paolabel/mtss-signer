@@ -88,7 +88,7 @@ class Verifier:
                               " is different from the original message."))
             return (False, [])
 
-        print(f"({number_of_tests},{number_of_blocks})")
+
         for test in range(number_of_tests):
             concatenation = bytes()
             for block in range(number_of_blocks):

@@ -78,7 +78,7 @@ def log_localization_result(verified_file: str, public_key_file: str, n:int, t:i
 
 def log_correction_parameters(s: int, process_pool_size: int) -> None:
     __write_to_log_file(
-        (f"Max ASCII (1 byte) characters to correct per block = {s}\n"
+        (f"Max ASCII/UTF-8 (1 byte) characters to correct per block = {s}\n"
          f"Available parallel processes to realize the correction: {process_pool_size}\n")
     )
 
