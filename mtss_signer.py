@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import List, Tuple
 import traceback
 from mtsssigner.signer import sign
-from mtsssigner.verifier import Verifier
+from mtsssigner.verifier import verify, verify_and_correct
 from mtsssigner import logger
 from mtsssigner.utils.file_and_block_utils import (get_signature_file_path,
                                                    get_correction_file_path,
@@ -48,14 +48,12 @@ if __name__ == '__main__':
             else:
                 raise ValueError("Invalid option for sign operation (must be '-s' or '-k')")
         elif operation == "verify":
-            verifier = Verifier()
             signature_file_path = sys.argv[4]
-            result = verifier.verify(message_file_path, signature_file_path, key_file_path)
+            result = verify(message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
         elif operation == "verify-correct":
-            verifier = Verifier()
             signature_file_path = sys.argv[4]
-            result = verifier.verify_and_correct(message_file_path, signature_file_path, key_file_path)
+            result = verify_and_correct(message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
             correction = result[2]
             if correction != "":
