@@ -31,8 +31,8 @@ def log_execution_end(elapsed_time: timedelta) -> None:
                          f"Elapsed time: {elapsed_time}\n"))
 
 def log_signature_parameters(signed_file: str, private_key_file: str, n:int,
-                             key_modulus:int, q:int, d:int, k:int, t:int,
-                             blocks: List[str], max_size_bytes = 0) -> None:
+                             key_modulus:int, d:int, t:int, blocks: List[str],
+                             q:int=-1, k:int=-1, max_size_bytes:int=-1) -> None:
     log_content = f"Signed file = {signed_file}; Private key file = {private_key_file}\n"
     log_content += f"Number of blocks = {n}; Private key modulus = {key_modulus}\n"
     if max_size_bytes > 0:
@@ -43,9 +43,12 @@ def log_signature_parameters(signed_file: str, private_key_file: str, n:int,
         log_content += f"Bytes available for hashed tests = {space_for_tests}\n"
         log_content += ("Unrounded number of tests available = "
                        f"{(space_for_tests/DIGEST_SIZE_BYTES)}\n")
-    else:
+    elif k > 0:
         log_content += f"Supplied k = {k}\n"
-    log_content += f"Resulting CFF = {d}-CFF({t}, {n}), q = {q}, k = {k}\n"
+    if d > 1:
+        log_content += f"Resulting CFF = {d}-CFF({t}, {n}), q = {q}, k = {k}\n"
+    else :
+        log_content += f"Resulting CFF = {d}-CFF({t}, {n})\n"
     modifiable_blocks_proportion = round(d/n, 4)
     log_content += f"Proportion of modifiable blocks: {modifiable_blocks_proportion}%\n"
     log_content += f"Blocks:\n{blocks}\n"

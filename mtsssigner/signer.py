@@ -30,9 +30,9 @@ def sign(message_file_path: str, private_key_path: str,
 
     message, blocks= get_message_and_blocks_from_file(message_file_path)
     if not is_prime_power(len(blocks)):
-        raise ValueError(
-            f"Number of blocks generated must be a prime power (Number of blocks = {len(blocks)})"
-        )
+        logger.log_error(("Number of blocks generated must be a prime power "
+                          f"to use polynomial CFF (Number of blocks = {len(blocks)}), using 1-CFF"))
+        k = 1
     private_key: RsaKey = __get_private_key_from_file(private_key_path)
     key_modulus = private_key.n.bit_length()
 
@@ -40,27 +40,36 @@ def sign(message_file_path: str, private_key_path: str,
 
     cff: list(list) = [[]]
 
-    if max_size_bytes > 0:
+    if k == 1:
+        cff = create_1_cff(n)
+    elif max_size_bytes > 0:
         rsa_signature_output_bytes = key_modulus/8
         message_hash_bytes = DIGEST_SIZE_BYTES
         space_for_tests = int(max_size_bytes - rsa_signature_output_bytes - message_hash_bytes)
+        if space_for_tests < 0:
+            raise ValueError(
+                "Desired max signature size is too small for any signature with the supplied key"
+            )
         q = int(sqrt(floor(space_for_tests/DIGEST_SIZE_BYTES)))
         k = get_k_from_n_and_q(n, q)
         cff = create_cff(q, k)
-    elif k == 1:
-        cff = create_1_cff(n)
     elif k > 1:
         q = get_q_from_k_and_n(k, n)
         cff = create_cff(q, k)
     else:
-        error_message = "Either max size or 'K' value must be provided"
-        logger.log_error(error_message)
-        raise Exception(error_message)
+        raise Exception("Either max size or 'K' value must be provided")
 
     cff_dimensions = (len(cff), n)
     d = get_d(q, k) if k > 1 else 1
-    logger.log_signature_parameters(message_file_path, private_key_path, n,
-                                    key_modulus, q, d ,k, len(cff), blocks, max_size_bytes)
+    if k > 1:
+        d = get_d(q, k)
+        logger.log_signature_parameters(message_file_path, private_key_path, n,
+                                key_modulus, d, len(cff), blocks, q, k, max_size_bytes)
+    else:
+        d = 1
+        logger.log_signature_parameters(message_file_path, private_key_path, n,
+                                key_modulus, d, len(cff), blocks)
+
     tests = []
 
     for test in range(cff_dimensions[0]):
