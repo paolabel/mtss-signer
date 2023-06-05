@@ -43,7 +43,8 @@ if __name__ == '__main__':
                 write_signature_to_file(signature, message_file_path)
                 print(f"Signature written to {get_signature_file_path(message_file_path)}")
             elif flag == "-k":
-                sign(message_file_path, key_file_path, k=number)
+                signature = sign(message_file_path, key_file_path, k=number)
+                write_signature_to_file(signature, message_file_path)
                 print(f"Signature written to {get_signature_file_path(message_file_path)}")
             else:
                 raise ValueError("Invalid option for sign operation (must be '-s' or '-k')")

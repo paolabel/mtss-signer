@@ -19,13 +19,13 @@ def create_cff(q: int, k:int) -> List[List[int]]:
     d: int = get_d(q, k)
     if d == 1 or k < 2:
         return create_1_cff(q**k)
-    return create_polynomial_cff(q, k)
+    return __create_polynomial_cff(q, k)
 
 # Creates an 1-CFF with the minimum amount of
 # tests possible (using Sperner set systems)
 def create_1_cff(n: int) -> List[List[int]]:
     t: int = get_t_for_1_cff(n)
-    tests: List[list] = get_1_cff_columns(t)
+    tests: List[list] = __get_1_cff_columns(t)
     cff = numpy.zeros((t,n), dtype=int)
     for block in range(n):
         for incidence in tests[block]:
@@ -52,7 +52,7 @@ def get_t_for_1_cff(n: int) -> int:
 
 # Returns the columns of an optimal 1-CFF, built using every
 # combination of floor(t/2) elements each from the column
-def get_1_cff_columns(t: int) -> List[int]:
+def __get_1_cff_columns(t: int) -> List[int]:
     result = itertools.combinations(range(t), int(numpy.floor(t/2)))
     return list(result)
 
@@ -63,14 +63,14 @@ def get_1_cff_columns(t: int) -> List[int]:
 # final signed document, compared to hashing each block individually,
 # considering the resulting signature size. If q = k, the polynomial
 # 1-CFF is less eficient in size than an optimal 1-CFF.
-def create_polynomial_cff(q: int, k: int) -> List[List[int]]:
+def __create_polynomial_cff(q: int, k: int) -> List[List[int]]:
     assert is_prime_power(q)
     assert k >= 2
     assert q >= k
 
     finite_field: FieldArray = galois.GF(q)
-    b_set = get_b_set(finite_field, k)
-    x_set = get_x_set(finite_field)
+    b_set = __get_b_set(finite_field, k)
+    x_set = __get_x_set(finite_field)
 
     cff_dimensions = (q**2, q**k)
     cff = numpy.zeros(cff_dimensions, dtype=int)
@@ -83,13 +83,13 @@ def create_polynomial_cff(q: int, k: int) -> List[List[int]]:
     return cff
 
 # Returns the B set for constructing a polynomial CFF
-def get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
+def __get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
     polinomial_coeffs_with_deg_up_to_k: list[list] = get_all_polynomials_with_deg_up_to_k(field, k)
     b_set = [Polynomial(coefficients) for coefficients in polinomial_coeffs_with_deg_up_to_k]
     return b_set
 
 # Returns the X set for constructing a polynomial CFF
-def get_x_set(field: FieldArray) -> List[list]:
+def __get_x_set(field: FieldArray) -> List[list]:
     field_elements: List[int] = get_field_elements(field)
     result = itertools.product(field_elements, repeat=2)
     return [tuple(element) for element in result]
@@ -102,11 +102,6 @@ def get_d(q:int, k:int) -> int:
         return 0
     d: int = int(numpy.floor((q-1)/(k-1)))
     return d
-
-# Gets the q value for the d-CFF according to the relation d = floor((q-1)/(k-1))
-def get_q(k:int, d: int) -> int:
-    q:int = d(k-1) + 1
-    return q
 
 # Gets the q value for the d-CFF(q^2,n=q^k) according to a supplied k
 # and the desired number of blocks (n). Available k values supplied in
@@ -141,14 +136,6 @@ def get_q_from_k_and_n(k:int, n:int) -> int:
         raise ValueError(error_message)
     return q
 
-# Gets the d value for the d-CFF(t=q^2,n=q^k) according to the
-# desired number of tests (t) and the desired number of blocks (n)
-def get_d_from_test_and_block_number(t: int, n: int) -> int:
-    q: int = int(sqrt(t))
-    assert is_prime_power(q)
-    k: int = get_k_from_n_and_q(n, q)
-    return get_d(q, k)
-
 # Gets the k value for the d-CFF(t=q^2,n=q^k) according to
 # the desired number of blocks (n) and a given q
 def get_k_from_n_and_q(n: int, q: int) -> int:
@@ -166,3 +153,18 @@ def get_k_from_n_and_q(n: int, q: int) -> int:
         logger.log_error(error_message)
         raise ValueError(error_message)
     return k
+
+# Gets the q value for the d-CFF according to the relation d = floor((q-1)/(k-1))
+# Not used
+def __get_q(k:int, d: int) -> int:
+    q:int = d(k-1) + 1
+    return q
+
+# Gets the d value for the d-CFF(t=q^2,n=q^k) according to the
+# desired number of tests (t) and the desired number of blocks (n)
+# Not used
+def __get_d_from_test_and_block_number(t: int, n: int) -> int:
+    q: int = int(sqrt(t))
+    assert is_prime_power(q)
+    k: int = get_k_from_n_and_q(n, q)
+    return get_d(q, k)

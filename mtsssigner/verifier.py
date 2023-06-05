@@ -21,7 +21,8 @@ DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 cff: List[List[int]] = [[]]
 message: str
 blocks: List[str]
-hashed_tests: List[bytearray]
+block_hashes: List[bytearray] = []
+hashed_tests: List[bytearray] = []
 corrected = {}
 
 # Verifies the signature and localizes the modified blocks
@@ -43,7 +44,6 @@ def verify(message_file_path: str, signature_file_path: str,
     public_key: RsaKey = RSA.import_key(public_key_str)
 
     key_modulus = public_key.n.bit_length()
-
     t = signature[:-int(key_modulus/8)]
     t_hash = SHA256.new(t)
     t_signature = signature[-int(key_modulus/8):]
@@ -90,11 +90,15 @@ def verify(message_file_path: str, signature_file_path: str,
                             " is different from the original message."))
         return (False, [])
 
+    global block_hashes
+    for block in blocks:
+        block_hashes.append(SHA256.new(block.encode()).digest())
+
     for test in range(number_of_tests):
         concatenation = bytes()
         for block in range(number_of_blocks):
             if cff[test][block] == 1:
-                concatenation += SHA256.new(blocks[block].encode()).digest()
+                concatenation += block_hashes[block]
         rebuilt_tests.append(concatenation)
 
     non_modified_blocks: List[int] = []
@@ -130,8 +134,8 @@ def verify_and_correct(message_file_path: str, signature_file_path: str,
     if verification_result[1] == [] or not verification_result[0]:
         return (verification_result[0], verification_result[1], correction)
 
-    process_pool_size = available_cpu_count()
-    MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = get_max_block_length()
+    process_pool_size = __available_cpu_count()
+    MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = __get_max_block_length()
     logger.log_correction_parameters(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS, process_pool_size)
     for k in verification_result[1]:
         i_rows = []
@@ -152,14 +156,14 @@ def verify_and_correct(message_file_path: str, signature_file_path: str,
         for block in range(len(cff[i])):
             if cff[i][block] == 1:
                 if block != k:
-                    i_concatenation.append(SHA256.new(blocks[block].encode()).digest())
+                    i_concatenation.append(block_hashes[block])
                 else:
                     k_index = len(i_concatenation)
                     i_concatenation.append(b'00000000000000000000000000000000')
         k_index = int((k_index*DIGEST_SIZE)/8)
 
         find_correct_b = functools.partial(
-            return_if_correct_b,
+            __return_if_correct_b,
             concatenation=bytearray(b''.join(i_concatenation)),
             k_index = k_index, i=i, k=k)
         with Pool(process_pool_size) as process_pool:
@@ -169,7 +173,7 @@ def verify_and_correct(message_file_path: str, signature_file_path: str,
                 if result is not None:
                     if result[0]:
                         corrected[k] = True
-                        blocks[k] = (int_to_bytes(result[1])).decode("utf-8")
+                        blocks[k] = (__int_to_bytes(result[1])).decode("utf-8")
                         logger.log_block_correction(k, blocks[k])
                         break
     if any(correction for correction in corrected.values()):
@@ -178,18 +182,18 @@ def verify_and_correct(message_file_path: str, signature_file_path: str,
         logger.log_block_correction(-1)
     return (verification_result[0], verification_result[1], correction)
 
-def get_max_block_length():
+def __get_max_block_length():
     return max([len(block) for block in blocks])
 
 # Checks if the given bytes match the original value for the
 # modified block k, considering the hash value of the signed ith test
-def return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
+def __return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
                         i: int, k: int) -> Tuple[bool, int] | None:
 
     if (b % 5000000) == 0:
         logger.log_correction_progress(b)
 
-    hash_k = bytearray(SHA256.new(int_to_bytes(b)).digest())
+    hash_k = bytearray(SHA256.new(__int_to_bytes(b)).digest())
     concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
     rebuilt_corrected_test = SHA256.new(concatenation).digest()
     if rebuilt_corrected_test == hashed_tests[i]:
@@ -199,12 +203,12 @@ def return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
         return (False, b)
 
 # Convertes an integer to a bytes object
-def int_to_bytes(number: int) -> bytes:
+def __int_to_bytes(number: int) -> bytes:
     return number.to_bytes((len(bin(number)[2:]) + 7) // 8, 'big')
 
 # Return the number of cores (physycal of virtual) available for use by the program process
 # https://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-using-python
-def available_cpu_count():
+def __available_cpu_count():
     """ Number of available virtual or physical CPUs on this system, i.e.
     user/real as output by time(1) when called with an optimally scaling
     userspace-only program"""
