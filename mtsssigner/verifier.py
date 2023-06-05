@@ -176,6 +176,10 @@ def verify_and_correct(message_file_path: str, signature_file_path: str,
                         blocks[k] = (__int_to_bytes(result[1])).decode("utf-8")
                         logger.log_block_correction(k, blocks[k])
                         break
+                    else:
+                        logger.log_collision(k, result[1])
+                        # Continue executing after collision for partial correction
+                        break
     if any(correction for correction in corrected.values()):
         correction = rebuild_content_from_blocks(blocks, message_file_path[-3:])
     else:
@@ -197,12 +201,9 @@ def __return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
     concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
     rebuilt_corrected_test = SHA256.new(concatenation).digest()
     if rebuilt_corrected_test == hashed_tests[i]:
-        if not corrected[k]:
-            return (True, b)
-        logger.log_collision(k, b)
-        return (False, b)
+        return (not corrected[k], b)
 
-# Convertes an integer to a bytes object
+# Converts an integer to a bytes object
 def __int_to_bytes(number: int) -> bytes:
     return number.to_bytes((len(bin(number)[2:]) + 7) // 8, 'big')
 
