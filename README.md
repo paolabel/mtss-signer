@@ -8,9 +8,11 @@ Gerar chaves RSA PKCS#1 em formato PEM com OpenSSL-1.1:
 - Chave pública: ```openssl-1.1 rsa -in {nome do arquivo da chave privada}.pem -outform PEM -pubout -out {nome do arquivo p/ chave pública}.pem```
 
 Gerar chaves RSA PKCS#1 em formato PEM com script próprio:
+
 ```python test_keys/key_generator.py rsa {nome dos arquivos} {modulus da chave}```
 
 Gerar chaves Ed25519 PKCS#8 em formato PEM com script próprio:
+
 ```python test_keys/key_generator.py ed25519 {nome dos arquivos}```
 
 
