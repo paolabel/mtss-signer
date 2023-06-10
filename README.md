@@ -4,9 +4,10 @@ Por enquanto só há opção de assinar usando esquema PKCS#1 v1.5 com SHA256 e 
 
 Considerar criar script para criação de chaves ao invés de depender da versão do OpenSSL
 
-A chave privada pode ser criada  com o comando ```sudo openssl-1.1 genrsa -des3 -out {nome do arquivo}.pem {modulus da chave}```
+A chave privada sem senha pode ser criada com o comando ```openssl-1.1 genrsa -out {nome do arquivo}.pem {modulus da chave}``
+A chave privada com senha pode ser criada com o comando ```openssl-1.1 genrsa -aes128 -out {nome do arquivo}.pem {modulus da chave}```
 
-A chave pública pode ser criada com o comando```sudo openssl-1.1 rsa -in {nome do arquivo}.pem -outform PEM -pubout -out {nome do arquivo}.pem```
+A chave pública pode ser criada com o comando```openssl-1.1 rsa -in {nome do arquivo da chave privada}.pem -outform PEM -pubout -out -out {nome do arquivo p/ chave pública}.pem```
 
 Gerar assinatura detached com openssl:
 

@@ -94,11 +94,20 @@ def sign(message_file_path: str, private_key_path: str,
 
 # Retrieves a private key from password-protected PEM file using OpenSSL
 def __get_private_key_from_file(private_key_path: str) -> RsaKey:
-    open_pk_command = f"sudo openssl rsa -in {private_key_path}"
-    process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE, check=True)
-    openssl_stdout = str(process.stdout)[2:-3]
-    private_key_str = __get_correct_private_key_str_from_openssl_stdout(openssl_stdout)
-    private_key_password = getpass("Enter private key password again:")
+    try:
+        with open(private_key_path, "r", encoding="utf=8") as key_file:
+            private_key_str: str = key_file.read()
+            private_key_lines:str = key_file.readlines()
+        if private_key_lines[1] == "Proc-Type: 4,ENCRYPTED":
+            private_key_password = getpass("Enter private key password:")
+        else:
+            private_key_password = None
+    except Exception:
+        private_key_password = getpass("Enter private key password:")
+        open_pk_command = f"openssl rsa -in {private_key_path} -passin pass:{private_key_password}"
+        process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE, check=True)
+        openssl_stdout = str(process.stdout)[2:-3]
+        private_key_str = __get_correct_private_key_str_from_openssl_stdout(openssl_stdout)
     return RSA.import_key(private_key_str, private_key_password)
 
 # Returns the correctly formatted string for creating

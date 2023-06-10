@@ -58,6 +58,7 @@
 	        <url>example5.com</url>
 	    </mirror>
 		<mirror>
+			<name>34</name>
 	        <id>1</id>
 	    </mirror>
 	</mirrors>

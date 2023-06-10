@@ -24,7 +24,7 @@ def __rebuild_txt_content_from_blocks(blocks: List[str]) -> str:
 def __get_message_and_blocks_from_xml_file(xml_file_path: str) -> Tuple[str, List[str]]:
     with open(xml_file_path, "r", encoding="utf-8") as xml_file:
         message: str = xml_file.read()
-    ElementTree.fromstring(message)
+    message = ElementTree.canonicalize(message)
     message = message.replace("\n", "")
     message = message.replace("\t", "")
     delimiter = "<"
