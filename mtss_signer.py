@@ -6,14 +6,15 @@ import traceback
 from mtsssigner.signer import sign
 from mtsssigner.verifier import verify, verify_and_correct
 from mtsssigner import logger
+from mtsssigner.signature_scheme import SigScheme
 from mtsssigner.utils.file_and_block_utils import (get_signature_file_path,
                                                    get_correction_file_path,
                                                    write_correction_to_file,
                                                    write_signature_to_file)
 
-# python mtss_signer.py sign messagepath privkeypath -s/-k number
-# python mtss_signer.py verify messagepath pubkeypath signaturepath
-# python mtss_signer.py verify-correct messagepath pubkeypath signaturepath
+# python mtss_signer.py sign messagepath privkeypath -s/-k number rsa/ed5519 hashfunc
+# python mtss_signer.py verify messagepath pubkeypath signaturepath rsa/ed5519 hashfunc
+# python mtss_signer.py verify-correct messagepath pubkeypath signaturepath rsa/ed5519 hashfunc
 
 def __print_localization_result(result: Tuple[bool, List[int]]):
     signature_status = "Signature is valid" if result[0] else "Signature could not be verified"
@@ -32,29 +33,32 @@ if __name__ == '__main__':
     logger.log_execution_start(operation)
     message_file_path = sys.argv[2]
     key_file_path = sys.argv[3]
+    sig_algorithm = sys.argv[4]
+    hash_function = sys.argv[5]
     try:
+        sig_scheme = SigScheme(sig_algorithm, hash_function)
         if operation == "sign":
             flag = sys.argv[4]
             number = int(sys.argv[5])
             if not flag[0] == "-":
                 raise ValueError("Invalid argument for flag (must be '-s' or '-k')")
             if flag == "-s":
-                signature = sign(message_file_path, key_file_path, max_size_bytes=number)
+                signature = sign(sig_scheme, message_file_path, key_file_path, max_size_bytes=number)
                 write_signature_to_file(signature, message_file_path)
                 print(f"Signature written to {get_signature_file_path(message_file_path)}")
             elif flag == "-k":
-                signature = sign(message_file_path, key_file_path, k=number)
+                signature = sign(sig_scheme, message_file_path, key_file_path, k=number)
                 write_signature_to_file(signature, message_file_path)
                 print(f"Signature written to {get_signature_file_path(message_file_path)}")
             else:
                 raise ValueError("Invalid option for sign operation (must be '-s' or '-k')")
         elif operation == "verify":
             signature_file_path = sys.argv[4]
-            result = verify(message_file_path, signature_file_path, key_file_path)
+            result = verify(sig_scheme, message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
         elif operation == "verify-correct":
             signature_file_path = sys.argv[4]
-            result = verify_and_correct(message_file_path, signature_file_path, key_file_path)
+            result = verify_and_correct(sig_scheme, message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
             correction = result[2]
             if correction != "":

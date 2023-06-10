@@ -13,6 +13,7 @@ from mtsssigner.cff_builder import (create_cff,
                                     get_d)
 from mtsssigner.utils.file_and_block_utils import get_message_and_blocks_from_file
 from mtsssigner.utils.prime_utils import is_prime_power
+from mtsssigner.signature_scheme import SigScheme
 from mtsssigner import logger
 
 # Digest size for the chosen hash function (SHA256)
@@ -25,7 +26,7 @@ DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 # (their creation depends on the file type) must be a prime power.
 # https://crypto.stackexchange.com/questions/95878/does-the-signature-length-
 # of-rs256-depend-on-the-size-of-the-rsa-key-used-for-si
-def sign(message_file_path: str, private_key_path: str,
+def sign(sig_scheme: SigScheme, message_file_path: str, private_key_path: str,
          max_size_bytes: int = 0, k: int = 0) -> bytearray:
 
     message, blocks= get_message_and_blocks_from_file(message_file_path)
