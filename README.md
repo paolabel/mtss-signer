@@ -9,11 +9,11 @@ Gerar chaves RSA PKCS#1 em formato PEM com OpenSSL-1.1:
 
 Gerar chaves RSA PKCS#1 em formato PEM com script próprio:
 
-```python test_keys/key_generator.py rsa {nome dos arquivos} {modulus da chave}```
+- ```python test_keys/key_generator.py rsa {nome dos arquivos} {modulus da chave}```
 
 Gerar chaves Ed25519 PKCS#8 em formato PEM com script próprio:
 
-```python test_keys/key_generator.py ed25519 {nome dos arquivos}```
+- ```python test_keys/key_generator.py ed25519 {nome dos arquivos}```
 
 
 Gerar assinatura detached com openssl:
