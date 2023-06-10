@@ -3,7 +3,7 @@ Dependências: Python 3.10, pycryptodome, galois, pytest, sympy
 Por enquanto só há opção de assinar usando esquema PKCS#1 v1.5 com SHA256 e de criar a assinatura de modo detached
 
 Gerar chaves RSA PKCS#1 em formato PEM com OpenSSL-1.1:
-- Chave privada sem senha: ```openssl-1.1 genrsa -out {nome do arquivo}.pem {modulus da chave}``
+- Chave privada sem senha: ```openssl-1.1 genrsa -out {nome do arquivo}.pem {modulus da chave}```
 - Chave privada com senha: ```openssl-1.1 genrsa -aes128 -out {nome do arquivo}.pem {modulus da chave}```
 - Chave pública: ```openssl-1.1 rsa -in {nome do arquivo da chave privada}.pem -outform PEM -pubout -out {nome do arquivo p/ chave pública}.pem```
 
