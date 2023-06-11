@@ -1,14 +1,15 @@
 from datetime import datetime
 from datetime import timedelta
 from typing import List, Callable, Union
+from mtsssigner.signature_scheme import SigScheme
 
 LOG_FILE_PATH="./logs.txt"
-DIGEST_SIZE_BYTES = 256/8
 
-def log_program_command(command: List[str]) -> None:
+def log_program_command(command: List[str], sig_scheme: SigScheme) -> None:
     command_str = " ".join(command)
     log_content = ("##############################\n"
                 f"Command: {command_str}\n")
+    log_content += f"Signature scheme = {sig_scheme.sig_algorithm}, hash function = {sig_scheme.hash_function}\n"
     __write_to_log_file(log_content)
 
 def log_execution_start(operation: str) -> None:
@@ -31,18 +32,21 @@ def log_execution_end(elapsed_time: timedelta) -> None:
                          f"Elapsed time: {elapsed_time}\n"))
 
 def log_signature_parameters(signed_file: str, private_key_file: str, n:int,
-                             key_modulus:int, d:int, t:int, blocks: List[str],
+                             sig_scheme:SigScheme, d:int, t:int, blocks: List[str],
                              q:int=-1, k:int=-1, max_size_bytes:int=-1) -> None:
     log_content = f"Signed file = {signed_file}; Private key file = {private_key_file}\n"
-    log_content += f"Number of blocks = {n}; Private key modulus = {key_modulus}\n"
+    if sig_scheme.sig_algorithm == "PKCS#1 v1.5":
+        key_length = f"modulus = {sig_scheme.signature_length_bytes*8}"
+    else:
+        key_length = "length = 256; signature length = 512"
+    log_content += f"Number of blocks = {n}; Private key {key_length}\n"
     if max_size_bytes > 0:
-        rsa_signature_output_bytes = key_modulus/8
-        message_hash_bytes = DIGEST_SIZE_BYTES
-        space_for_tests = int(max_size_bytes - rsa_signature_output_bytes - message_hash_bytes)
+        message_hash_bytes = sig_scheme.digest_size_bytes
+        space_for_tests = int(max_size_bytes - sig_scheme.signature_length_bytes - message_hash_bytes)
         log_content += f"Supplied max size for signature (in bytes) = {max_size_bytes}\n"
         log_content += f"Bytes available for hashed tests = {space_for_tests}\n"
         log_content += ("Unrounded number of tests available = "
-                       f"{(space_for_tests/DIGEST_SIZE_BYTES)}\n")
+                       f"{(space_for_tests/sig_scheme.digest_size_bytes)}\n")
     elif k > 0:
         log_content += f"Supplied k = {k}\n"
     if d > 1:
@@ -55,12 +59,17 @@ def log_signature_parameters(signed_file: str, private_key_file: str, n:int,
     __write_to_log_file(log_content)
 
 def log_nonmodified_verification_result(verified_file: str, public_key_file: str,
-                                        result: bool) -> None:
-    log_content = f"Verified file = {verified_file}; Public key file = {public_key_file}\n"
+                                        sig_scheme: SigScheme, result: bool) -> None:
+    if sig_scheme.sig_algorithm == "PKCS#1 v1.5":
+        key_length = f"modulus = {sig_scheme.signature_length_bytes*8}"
+    else:
+        key_length = "length = 256; signature length = 512"
+    log_content = f"Key {key_length}\n"
+    log_content += f"Verified file = {verified_file}; Public key file = {public_key_file}\n"
     signature_status = "Valid" if result else "Invalid"
-    log_content += f"Signature status: {signature_status}"
+    log_content += f"Signature status: {signature_status}\n"
     if result:
-        log_content += "The message was not modified"
+        log_content += "The message was not modified\n"
     __write_to_log_file(log_content)
 
 def log_localization_result(verified_file: str, public_key_file: str, n:int, t:int,

@@ -1,12 +1,14 @@
-from Crypto.PublicKey import RSA, ECC
-from getpass import getpass
 import sys
+from getpass import getpass
+from Crypto.PublicKey import RSA, ECC
 
 # Generates PKCS#1 RSA private/public key pair and writes them 
 # to {key_path}_priv.pem and {key_path}_pub.pem respectively
 def __gen_rsa_keypair(modulus: int, key_path:str):
     key = RSA.generate(modulus)
-    private_key_password = getpass("Enter desired private key password (press Enter for no password):")
+    private_key_password = getpass(
+        "Enter desired private key password (press Enter for no password):"
+    )
     if private_key_password == "":
         private_key = key.export_key(pkcs=1)
     else:
@@ -22,7 +24,9 @@ def __gen_rsa_keypair(modulus: int, key_path:str):
 # to {key_path}_priv.pem and {key_path}_pub.pem respectively
 def __gen_ed22519_keypair(key_path:str):
     key = ECC.generate(curve="ed25519")
-    private_key_password = getpass("Enter desired private key password (press Enter for no password):")
+    private_key_password = getpass(
+        "Enter desired private key password (press Enter for no password):"
+    )
     if private_key_password == "":
         private_key = key.export_key(format="PEM", use_pkcs8=True)
     else:
@@ -30,7 +34,7 @@ def __gen_ed22519_keypair(key_path:str):
             format="PEM",
             use_pkcs8=True,
             passphrase=private_key_password,
-            protection="PBKDF2WithHMAC-SHA1AndAES128-CBC",
+            protection="PBKDF2WithHMAC-SHA1AndAES128-CBC"
         )
     with open(key_path + "_priv.pem", "w") as priv_key_file:
         priv_key_file.write(private_key)
