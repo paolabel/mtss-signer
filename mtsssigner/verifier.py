@@ -1,7 +1,7 @@
 from multiprocessing import Pool
 import re
 import functools
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from math import sqrt
 from Crypto.PublicKey import RSA
 from Crypto.PublicKey.RSA import RsaKey
@@ -54,7 +54,7 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
     except ValueError:
         verification_result = False
         logger.log_nonmodified_verification_result(
-            message_file_path, public_key_file_path, verification_result)
+            message_file_path, public_key_file_path, sig_scheme, verification_result)
         return (verification_result, [])
 
     message_hash = SHA256.new(message.encode()).digest()
@@ -63,7 +63,7 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
     if signature_message_hash == message_hash:
         verification_result = True
         logger.log_nonmodified_verification_result(
-            message_file_path, public_key_file_path, verification_result)
+            message_file_path, public_key_file_path, sig_scheme, verification_result)
         return (True, [])
 
     joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE_BYTES)]
@@ -128,7 +128,7 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
 # small (i.e. 4 or less) or the characters of the file are codifiable by 1
 # byte (UTF-8 equivalent to ASCII), otherwise the correction takes too long.
 def verify_and_correct(sig_scheme: SigScheme, message_file_path: str, signature_file_path: str,
-                        public_key_file_path: str) -> Tuple[bool, List[int], str]:
+                        public_key_file_path: str) -> Union[Tuple[bool, List[int], str], None]:
     verification_result = verify(message_file_path, signature_file_path,
                                  public_key_file_path)
     correction = ""
@@ -193,7 +193,7 @@ def __get_max_block_length():
 # Checks if the given bytes match the original value for the
 # modified block k, considering the hash value of the signed ith test
 def __return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
-                        i: int, k: int) -> Tuple[bool, int] | None:
+                        i: int, k: int) -> Tuple[bool, int]:
 
     if (b % 5000000) == 0:
         logger.log_correction_progress(b)
