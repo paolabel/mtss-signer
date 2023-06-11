@@ -1,7 +1,7 @@
 import subprocess
 import traceback
 from getpass import getpass
-from typing import Dict, Callable, Union
+from typing import Dict, Callable, Union, List
 from Crypto.PublicKey import RSA, ECC
 from Crypto.PublicKey.ECC import EccKey
 from Crypto.PublicKey.RSA import RsaKey
@@ -95,13 +95,14 @@ class SigScheme:
 def get_rsa_private_key_from_file(private_key_path: str) -> RsaKey:
     try:
         with open(private_key_path, "r", encoding="utf=8") as key_file:
-            private_key_str: str = key_file.read()
-            private_key_lines:str = key_file.readlines()
-        if private_key_lines[1] == "Proc-Type: 4,ENCRYPTED":
+            private_key_lines: List[str] = key_file.readlines()
+            private_key_str: str = "\n".join(private_key_lines)
+        if private_key_lines[1] == "Proc-Type: 4,ENCRYPTED\n":
             private_key_password = getpass("Enter private key password:")
         else:
             private_key_password = None
-    except Exception:
+    except OSError or ValueError:
+        logger.log_error(traceback.print_exc)
         private_key_password = getpass("Enter private key password:")
         open_pk_command = f"openssl rsa -in {private_key_path} -passin pass:{private_key_password}"
         process = subprocess.run(open_pk_command.split(), stdout=subprocess.PIPE, check=True)
