@@ -3,10 +3,6 @@ import re
 import functools
 from typing import List, Tuple, Union
 from math import sqrt
-from Crypto.PublicKey import RSA
-from Crypto.PublicKey.RSA import RsaKey
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
 from mtsssigner.cff_builder import (create_cff,
                                     get_k_from_n_and_q,
                                     get_d,
@@ -15,9 +11,6 @@ from mtsssigner.utils.file_and_block_utils import (get_message_and_blocks_from_f
                                                    rebuild_content_from_blocks)
 from mtsssigner import logger
 from mtsssigner.signature_scheme import SigScheme
-
-DIGEST_SIZE = 256
-DIGEST_SIZE_BYTES = int(DIGEST_SIZE / 8)
 
 cff: List[List[int]] = [[]]
 message: str
@@ -39,26 +32,19 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
     with open(signature_file_path, "rb") as signature_file:
         signature: bytearray = signature_file.read()
 
-    with open(public_key_file_path, "r", encoding="utf=8") as key_file:
-        public_key_str: str = key_file.read()
+    public_key = sig_scheme.get_public_key(public_key_file_path)
 
-    public_key: RsaKey = RSA.import_key(public_key_str)
+    t = signature[:-int(sig_scheme.signature_length_bytes)]
+    t_signature = signature[-int(sig_scheme.signature_length_bytes):]
 
-    key_modulus = public_key.n.bit_length()
-    t = signature[:-int(key_modulus/8)]
-    t_hash = SHA256.new(t)
-    t_signature = signature[-int(key_modulus/8):]
-
-    try:
-        pkcs1_15.new(public_key).verify(t_hash, t_signature)
-    except ValueError:
-        verification_result = False
+    verification_result = sig_scheme.verify(public_key, t, t_signature)
+    if not verification_result:
         logger.log_nonmodified_verification_result(
             message_file_path, public_key_file_path, sig_scheme, verification_result)
         return (verification_result, [])
 
-    message_hash = SHA256.new(message.encode()).digest()
-    signature_message_hash = t[-int(DIGEST_SIZE_BYTES):]
+    message_hash = sig_scheme.get_digest(message)
+    signature_message_hash = t[-int(sig_scheme.digest_size_bytes):]
 
     if signature_message_hash == message_hash:
         verification_result = True
@@ -66,11 +52,11 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
             message_file_path, public_key_file_path, sig_scheme, verification_result)
         return (True, [])
 
-    joined_hashed_tests: bytearray = t[:-int(DIGEST_SIZE_BYTES)]
+    joined_hashed_tests: bytearray = t[:-int(sig_scheme.digest_size_bytes)]
     global hashed_tests
     hashed_tests = [
-        joined_hashed_tests[i:i+int(DIGEST_SIZE_BYTES)]
-        for i in range(0, len(joined_hashed_tests), int(DIGEST_SIZE_BYTES))]
+        joined_hashed_tests[i:i+int(sig_scheme.digest_size_bytes)]
+        for i in range(0, len(joined_hashed_tests), int(sig_scheme.digest_size_bytes))]
 
     number_of_tests = len(hashed_tests)
     number_of_blocks = len(blocks)
@@ -93,7 +79,7 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
 
     global block_hashes
     for block in blocks:
-        block_hashes.append(SHA256.new(block.encode()).digest())
+        block_hashes.append(sig_scheme.get_digest(block))
 
     for test in range(number_of_tests):
         concatenation = bytes()
@@ -105,7 +91,7 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
     non_modified_blocks: List[int] = []
 
     for test in range(len(rebuilt_tests)):
-        rebuilt_hashed_test = SHA256.new(rebuilt_tests[test]).digest()
+        rebuilt_hashed_test = sig_scheme.get_digest(rebuilt_tests[test])
         if rebuilt_hashed_test == hashed_tests[test]:
             for block in range (number_of_blocks):
                 if cff[test][block] == 1:
@@ -128,15 +114,15 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
 # small (i.e. 4 or less) or the characters of the file are codifiable by 1
 # byte (UTF-8 equivalent to ASCII), otherwise the correction takes too long.
 def verify_and_correct(sig_scheme: SigScheme, message_file_path: str, signature_file_path: str,
-                        public_key_file_path: str) -> Union[Tuple[bool, List[int], str], None]:
-    verification_result = verify(message_file_path, signature_file_path,
-                                 public_key_file_path)
+                        public_key_file_path: str) -> Tuple[bool, List[int], str]:
+    verification_result = verify(sig_scheme, message_file_path,
+                                 signature_file_path, public_key_file_path)
     correction = ""
     if verification_result[1] == [] or not verification_result[0]:
         return (verification_result[0], verification_result[1], correction)
 
     process_pool_size = __available_cpu_count()
-    MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = __get_max_block_length()
+    MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS = __get_max_block_length(verification_result[1])
     logger.log_correction_parameters(MAX_CORRECTABLE_BLOCK_LEN_CHARACTERS, process_pool_size)
     for k in verification_result[1]:
         i_rows = []
@@ -161,12 +147,12 @@ def verify_and_correct(sig_scheme: SigScheme, message_file_path: str, signature_
                 else:
                     k_index = len(i_concatenation)
                     i_concatenation.append(b'00000000000000000000000000000000')
-        k_index = int((k_index*DIGEST_SIZE)/8)
+        k_index = int((k_index*sig_scheme.digest_size)/8)
 
         find_correct_b = functools.partial(
             __return_if_correct_b,
             concatenation=bytearray(b''.join(i_concatenation)),
-            k_index = k_index, i=i, k=k)
+            k_index = k_index, i=i, k=k, sig_scheme = sig_scheme)
         with Pool(process_pool_size) as process_pool:
             for result in process_pool.imap(
                 find_correct_b,
@@ -187,20 +173,20 @@ def verify_and_correct(sig_scheme: SigScheme, message_file_path: str, signature_
         logger.log_block_correction(-1)
     return (verification_result[0], verification_result[1], correction)
 
-def __get_max_block_length():
-    return max([len(block) for block in blocks])
+def __get_max_block_length(modified_blocks: List[int]):
+    return max([len(blocks[block]) for block in modified_blocks])
 
 # Checks if the given bytes match the original value for the
 # modified block k, considering the hash value of the signed ith test
 def __return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
-                        i: int, k: int) -> Tuple[bool, int]:
+                        i: int, k: int, sig_scheme: SigScheme) -> Union[Tuple[bool, int], None]:
 
-    if (b % 5000000) == 0:
+    if (b % 500000) == 0:
         logger.log_correction_progress(b)
 
-    hash_k = bytearray(SHA256.new(__int_to_bytes(b)).digest())
-    concatenation[k_index:(k_index+DIGEST_SIZE_BYTES)] = hash_k
-    rebuilt_corrected_test = SHA256.new(concatenation).digest()
+    hash_k = bytearray(sig_scheme.get_digest(__int_to_bytes(b)))
+    concatenation[k_index:(k_index+sig_scheme.digest_size_bytes)] = hash_k
+    rebuilt_corrected_test = sig_scheme.get_digest(concatenation)
     if rebuilt_corrected_test == hashed_tests[i]:
         return (not corrected[k], b)
 

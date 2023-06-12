@@ -12,9 +12,12 @@ from mtsssigner.utils.file_and_block_utils import (get_signature_file_path,
                                                    write_correction_to_file,
                                                    write_signature_to_file)
 
-# python mtss_signer.py sign rsa/ed25519 hashfunc messagepath privkeypath -s/-k number
-# python mtss_signer.py verify rsa/ed25519 hashfunc messagepath pubkeypath signaturepath
-# python mtss_signer.py verify-correct rsa/ed25519 hashfunc messagepath pubkeypath signaturepath
+# python mtss_signer.py sign rsa messagepath privkeypath -s/-k number hashfunc
+# python mtss_signer.py sign ed25519 messagepath privkeypath -s/-k number
+# python mtss_signer.py verify rsa messagepath pubkeypath signaturepath hashfunc
+# python mtss_signer.py verify ed25519 messagepath pubkeypath signaturepath
+# python mtss_signer.py verify-correct rsa messagepath pubkeypath signaturepath hashfunc
+# python mtss_signer.py verify-correct ed25519 messagepath pubkeypath signaturepath hashfunc
 
 def __print_localization_result(result: Tuple[bool, List[int]]):
     signature_status = "Signature is valid" if result[0] else "Signature could not be verified"
@@ -33,18 +36,21 @@ if __name__ == '__main__':
     command = sys.argv
     operation = sys.argv[1]
     sig_algorithm = sys.argv[2].lower()
-    if sig_algorithm.lower() == "rsa":
-        sig_algorithm = "PKCS#1 v1.5"
-    hash_function = sys.argv[3].upper()
-    message_file_path = sys.argv[4]
-    key_file_path = sys.argv[5]
+    message_file_path = sys.argv[3]
+    key_file_path = sys.argv[4]
     try:
-        sig_scheme = SigScheme(sig_algorithm, hash_function)
+        if sig_algorithm == "rsa":
+            sig_algorithm = "PKCS#1 v1.5"
+            hash_function = sys.argv[7].upper() if operation == "sign" else sys.argv[6].upper()
+            sig_scheme = SigScheme(sig_algorithm, hash_function)
+        elif sig_algorithm == "ed25519":
+            # For Ed25519, hash function must be SHA512
+            sig_scheme = SigScheme(sig_algorithm)
         logger.log_program_command(command, sig_scheme)
         logger.log_execution_start(operation)
         if operation == "sign":
-            flag = sys.argv[6]
-            number = int(sys.argv[7])
+            flag = sys.argv[5]
+            number = int(sys.argv[6])
             if not flag[0] == "-":
                 raise ValueError("Invalid argument for flag (must be '-s' or '-k')")
             if flag == "-s":
@@ -58,11 +64,11 @@ if __name__ == '__main__':
             else:
                 raise ValueError("Invalid option for sign operation (must be '-s' or '-k')")
         elif operation == "verify":
-            signature_file_path = sys.argv[6]
+            signature_file_path = sys.argv[5]
             result = verify(sig_scheme, message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
         elif operation == "verify-correct":
-            signature_file_path = sys.argv[6]
+            signature_file_path = sys.argv[5]
             result = verify_and_correct(sig_scheme, message_file_path, signature_file_path, key_file_path)
             __print_localization_result(result)
             correction = result[2]

@@ -42,7 +42,7 @@ class SigScheme:
         self.hash_function = hash_function
         self.digest_size = int(hash_function[-3:])
         self.signature_length_bytes = 0
-        self.digest_size_bytes = self.digest_size/8
+        self.digest_size_bytes = int(self.digest_size/8)
 
     def get_digest(self, content: Union[str, bytes]) -> bytes:
         if isinstance(content, str):
