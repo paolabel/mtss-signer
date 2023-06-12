@@ -31,11 +31,30 @@ def is_prime_power(number:int) -> bool:
     return False
 
 # Generates a prime power sequence, which contain primes (p¹) up until 'number'
-def generate_prime_power_sequence(number):
+def generate_prime_power_sequence(number: int):
     prime_power_sequence = list(sieve.primerange(number*2))
     for n in range(2,11):
         prime_powers_of_n = [x**n for x in sieve.primerange(number/n)]
         prime_power_sequence.extend(prime_powers_of_n)
+    prime_power_sequence.sort()
+    return prime_power_sequence
+
+# Generates a prime power sequence with prime powers q^k
+# where q > k+1 and k > 2, up to number
+def generate_viable_prime_power_sequence(number: int):
+    prime_power_sequence = []
+    for n in range(3,11):
+        prime_powers_of_n = [x**n for x in sieve.primerange(number/n) if (x > n + 1) and x**n <= number]
+        prime_power_sequence.extend(prime_powers_of_n)
+    prime_power_sequence.sort()
+    return prime_power_sequence
+
+# Generates all prime powers raised by n
+# (p^n) up until limit
+def generate_prime_powers_raised_by_n(n:int, limit: int):
+    prime_power_sequence = []
+    prime_powers_of_n = [x**n for x in sieve.primerange(limit/n) if (x > n + 1) and x**n <= limit]
+    prime_power_sequence.extend(prime_powers_of_n)
     prime_power_sequence.sort()
     return prime_power_sequence
 
