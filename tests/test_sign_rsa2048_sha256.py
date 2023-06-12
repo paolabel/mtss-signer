@@ -36,7 +36,7 @@ correct_t_plus_messagehash_hash = "1d41b59281f17b1e17fde728fd72f22315cd31d19f67d
 
 def test_sign_rsa2048_sha256():
     sig_scheme = SigScheme("PKCS#1 v1.5", "SHA256")
-    signature = sign(sig_scheme, "msg/sample_message.txt", "test_keys/private_openssl1-1.pem", k=2)
+    signature = sign(sig_scheme, "msg/sample_message.txt", "keys/private_openssl1-1.pem", k=2)
 
     t = signature[:-int(KEY_MODULUS/8)]
     t_signature = signature[-int(KEY_MODULUS/8):]
