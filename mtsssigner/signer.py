@@ -1,11 +1,6 @@
-import subprocess
 from math import sqrt
 from getpass import getpass
 from numpy import floor
-from Crypto.PublicKey import RSA
-from Crypto.PublicKey.RSA import RsaKey
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
 from mtsssigner.cff_builder import (create_cff,
                                     get_k_from_n_and_q,
                                     get_q_from_k_and_n,

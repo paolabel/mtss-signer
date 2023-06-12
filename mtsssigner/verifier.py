@@ -146,7 +146,7 @@ def verify_and_correct(sig_scheme: SigScheme, message_file_path: str, signature_
                     i_concatenation.append(block_hashes[block])
                 else:
                     k_index = len(i_concatenation)
-                    i_concatenation.append(b'00000000000000000000000000000000')
+                    i_concatenation.append(b'0'*sig_scheme.digest_size_bytes)
         k_index = int((k_index*sig_scheme.digest_size)/8)
 
         find_correct_b = functools.partial(
@@ -187,6 +187,7 @@ def __return_if_correct_b(b: int, concatenation: bytearray, k_index:int,
     hash_k = bytearray(sig_scheme.get_digest(__int_to_bytes(b)))
     concatenation[k_index:(k_index+sig_scheme.digest_size_bytes)] = hash_k
     rebuilt_corrected_test = sig_scheme.get_digest(concatenation)
+
     if rebuilt_corrected_test == hashed_tests[i]:
         return (not corrected[k], b)
 
