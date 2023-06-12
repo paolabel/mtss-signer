@@ -44,7 +44,7 @@ def get_t_for_1_cff(n: int) -> int:
         result = 6435
         while result < n:
             t+= 1
-            result = comb(t, numpy.floor(t/2))
+            result = comb(t, int(numpy.floor(t/2)))
         return t
     for index in range(1, len(binomial_coefficient_results)):
         if binomial_coefficient_results[index] >= n:
@@ -81,6 +81,37 @@ def __create_polynomial_cff(q: int, k: int) -> List[List[int]]:
                 cff[test][block] = 1
 
     return cff
+
+# Creates a d-CFF(q^2, q^k) using a polynomial construction using 
+# multiprocessing for optimization. Not working
+# def create_polynomial_cff_parallel(q: int, k: int) -> List[List[int]]:
+#     assert is_prime_power(q)
+#     assert k >= 2
+#     assert q >= k
+
+#     finite_field: FieldArray = galois.GF(q)
+#     b_set = __get_b_set(finite_field, k)
+#     x_set = __get_x_set(finite_field)
+
+#     cff_dimensions = (q**2, q**k)
+#     cff = numpy.zeros(cff_dimensions, dtype=int)
+
+#     process_pool_size = __available_cpu_count()
+#     fill_cff_test = functools.partial(
+#             __evaluate_cff_test,
+#             n_blocks=cff_dimensions[1],
+#             b_set=b_set, x_set=x_set, q=q, cff_line = cff[0])
+#     with Pool(process_pool_size) as process_pool:
+#         for result in process_pool.imap(fill_cff_test, range(cff_dimensions[0])):
+#             cff[result[0]] = result[1]
+
+#     return cff
+
+# def __evaluate_cff_test(test: int, n_blocks:int, b_set: List[Polynomial], x_set: List[list], q:int, cff_line:List[int]) -> None:
+#     for block in range(n_blocks):
+#         if (get_polynomial_value_at_x(b_set[block], x_set[test][0]) % q) == x_set[test][1]:
+#             cff_line[block] = 1
+#     return (test, cff_line)
 
 # Returns the B set for constructing a polynomial CFF
 def __get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
