@@ -22,11 +22,11 @@ class SigScheme:
     def __init__(self, algorithm: str, hash_function:str="SHA512"):
         self.get_priv_key = {
             "PKCS#1 v1.5": get_rsa_private_key_from_file,
-            "ED25519": get_ed25519_private_key_from_file
+            "Ed25519": get_ed25519_private_key_from_file
         }
         self.get_pub_key = {
             "PKCS#1 v1.5": RSA.import_key,
-            "ED25519": ECC.import_key
+            "Ed25519": ECC.import_key
         }
         self.hash = {
             "SHA256": SHA256.new,
@@ -35,7 +35,7 @@ class SigScheme:
             "SHA3-512": SHA3_512.new 
         }
         if algorithm not in self.get_pub_key.keys():
-            raise ValueError("Signature algorithms must be 'PKCS#1 v1.5' or 'ED25519'")
+            raise ValueError("Signature algorithms must be 'PKCS#1 v1.5' or 'Ed25519'")
         if hash_function not in self.hash.keys():
             raise ValueError("Hashing algorithms must be 'SHA256', 'SHA512', 'SHA3-256' or 'SHA3-512'")
         self.sig_algorithm = algorithm
@@ -53,7 +53,7 @@ class SigScheme:
         hash = self.hash[self.hash_function](content)
         if self.sig_algorithm == "PKCS#1 v1.5":
             return pkcs1_15.new(private_key).sign(hash)
-        elif self.sig_algorithm == "ED25519":
+        elif self.sig_algorithm == "Ed25519":
             return eddsa.new(private_key, 'rfc8032').sign(hash)
 
     def verify(self, public_key: Union[RsaKey, EccKey], content: bytearray, signature: bytes) -> bool:
@@ -65,7 +65,7 @@ class SigScheme:
             except ValueError:
                 logger.log_error(traceback.print_exc)
                 return False
-        elif self.sig_algorithm == "ED25519":
+        elif self.sig_algorithm == "Ed25519":
             try:
                 eddsa.new(public_key, 'rfc8032').verify(hash, signature)
                 return True
@@ -88,7 +88,7 @@ class SigScheme:
     def set_signature_length_bytes(self, key: Union[RsaKey, EccKey]) -> None:
         if self.sig_algorithm == "PKCS#1 v1.5":
             self.signature_length_bytes = int(key.n.bit_length()/8)
-        elif self.sig_algorithm == "ED25519":
+        elif self.sig_algorithm == "Ed25519":
             self.signature_length_bytes = 64
 
 # Retrieves a private key from password-protected PEM file using OpenSSL
@@ -113,8 +113,8 @@ def get_rsa_private_key_from_file(private_key_path: str) -> RsaKey:
 # Retrieves a private key from password-protected PEM file using OpenSSL
 def get_ed25519_private_key_from_file(private_key_path: str) -> EccKey:
     with open(private_key_path, "r", encoding="utf=8") as key_file:
-        private_key_str: str = key_file.read()
-        private_key_lines:str = key_file.readlines()
+        private_key_lines: List[str] = key_file.readlines()
+        private_key_str: str = "\n".join(private_key_lines)
     if private_key_lines[0] == "-----BEGIN ENCRYPTED PRIVATE KEY-----":
         private_key_password = getpass("Enter private key password:")
     else:

@@ -45,7 +45,7 @@ if __name__ == '__main__':
             sig_scheme = SigScheme(sig_algorithm, hash_function)
         elif sig_algorithm == "ed25519":
             # For Ed25519, hash function must be SHA512
-            sig_scheme = SigScheme(sig_algorithm)
+            sig_scheme = SigScheme(sig_algorithm.capitalize())
         logger.log_program_command(command, sig_scheme)
         logger.log_execution_start(operation)
         if operation == "sign":
