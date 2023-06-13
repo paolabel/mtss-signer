@@ -32,12 +32,12 @@ def __print_localization_result(result: Tuple[bool, List[int]]):
 
 if __name__ == '__main__':
 
-    start = timer()
     command = sys.argv
     operation = sys.argv[1]
     sig_algorithm = sys.argv[2].lower()
     message_file_path = sys.argv[3]
     key_file_path = sys.argv[4]
+    start = timer()
     try:
         if sig_algorithm == "rsa":
             sig_algorithm = "PKCS#1 v1.5"
