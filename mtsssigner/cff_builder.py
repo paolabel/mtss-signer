@@ -64,9 +64,12 @@ def __get_1_cff_columns(t: int) -> List[int]:
 # considering the resulting signature size. If q = k, the polynomial
 # 1-CFF is less eficient in size than an optimal 1-CFF.
 def __create_polynomial_cff(q: int, k: int) -> List[List[int]]:
-    assert is_prime_power(q)
-    assert k >= 2
-    assert q >= k
+    if not is_prime_power(q):
+        raise ValueError("For polynomial CFFs, q must be a prime power")
+    if not k>=2:
+        raise ValueError("For polynomial CFFs, k must be >=2")
+    if not q >= k:
+        raise ValueError("For polynomial CFFs, q must be bigger than k")
 
     finite_field: FieldArray = galois.GF(q)
     b_set = __get_b_set(finite_field, k)
