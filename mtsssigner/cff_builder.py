@@ -8,9 +8,7 @@ import numpy
 from numpy.polynomial import Polynomial
 from sympy import factorint
 from mtsssigner import logger
-from mtsssigner.utils.math_utils import (get_all_polynomials_with_deg_up_to_k,
-                                        get_field_elements,
-                                        get_polynomial_value_at_x)
+from mtsssigner.utils.math_utils import get_all_polynomials_with_deg_up_to_k
 from mtsssigner.utils.prime_utils import is_prime_power
 
 # Creates either a 1-CFF or a polynomial d-CFF, according to the obtainable
@@ -80,51 +78,18 @@ def __create_polynomial_cff(q: int, k: int) -> List[List[int]]:
 
     for test in range(cff_dimensions[0]):
         for block in range(cff_dimensions[1]):
-            if (get_polynomial_value_at_x(b_set[block], x_set[test][0]) % q) == x_set[test][1]:
+            if b_set[block](x_set[test][0]) == x_set[test][1]:
                 cff[test][block] = 1
 
     return cff
 
-# Creates a d-CFF(q^2, q^k) using a polynomial construction using 
-# multiprocessing for optimization. Not working
-# def create_polynomial_cff_parallel(q: int, k: int) -> List[List[int]]:
-#     assert is_prime_power(q)
-#     assert k >= 2
-#     assert q >= k
-
-#     finite_field: FieldArray = galois.GF(q)
-#     b_set = __get_b_set(finite_field, k)
-#     x_set = __get_x_set(finite_field)
-
-#     cff_dimensions = (q**2, q**k)
-#     cff = numpy.zeros(cff_dimensions, dtype=int)
-
-#     process_pool_size = __available_cpu_count()
-#     fill_cff_test = functools.partial(
-#             __evaluate_cff_test,
-#             n_blocks=cff_dimensions[1],
-#             b_set=b_set, x_set=x_set, q=q, cff_line = cff[0])
-#     with Pool(process_pool_size) as process_pool:
-#         for result in process_pool.imap(fill_cff_test, range(cff_dimensions[0])):
-#             cff[result[0]] = result[1]
-
-#     return cff
-
-# def __evaluate_cff_test(test: int, n_blocks:int, b_set: List[Polynomial], x_set: List[list], q:int, cff_line:List[int]) -> None:
-#     for block in range(n_blocks):
-#         if (get_polynomial_value_at_x(b_set[block], x_set[test][0]) % q) == x_set[test][1]:
-#             cff_line[block] = 1
-#     return (test, cff_line)
-
 # Returns the B set for constructing a polynomial CFF
 def __get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
-    polinomial_coeffs_with_deg_up_to_k: list[list] = get_all_polynomials_with_deg_up_to_k(field, k)
-    b_set = [Polynomial(coefficients) for coefficients in polinomial_coeffs_with_deg_up_to_k]
-    return b_set
+    return get_all_polynomials_with_deg_up_to_k(field, k)
 
 # Returns the X set for constructing a polynomial CFF
 def __get_x_set(field: FieldArray) -> List[list]:
-    field_elements: List[int] = get_field_elements(field)
+    field_elements: List[int] = field.elements
     result = itertools.product(field_elements, repeat=2)
     return [tuple(element) for element in result]
 
