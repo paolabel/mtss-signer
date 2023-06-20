@@ -2,7 +2,8 @@ from multiprocessing import Pool
 import re
 import functools
 from typing import List, Tuple, Union
-from math import sqrt
+from numpy import floor
+from math import sqrt, comb
 from mtsssigner.cff_builder import (create_cff,
                                     get_k_from_n_and_q,
                                     get_d,
@@ -63,13 +64,22 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
 
     q: int = int(sqrt(number_of_tests))
     n: int = number_of_blocks
-    k: int = get_k_from_n_and_q(n, q)
-    d: int = get_d(q, k)
     global cff
-    if d < 2:
-        cff = create_1_cff(n)
-    else:
-        cff = create_cff(q, k)
+    try :
+        k: int = get_k_from_n_and_q(n, q)
+        d: int = get_d(q, k)
+        if d < 2:
+            cff = create_1_cff(n)
+        else:
+            cff = create_cff(q, k)
+    except ValueError as exception:
+        if n <= comb(number_of_tests, int(floor(number_of_tests/2))):
+            cff = create_1_cff(n)
+            d = 1
+            k = 1
+        else:
+            raise exception
+
     rebuilt_tests: List[str] = []
 
     if number_of_tests != len(cff):
