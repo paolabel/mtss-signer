@@ -80,6 +80,7 @@ if __name__ == '__main__':
         else:
             raise ValueError( "Unsupported operation (must be 'sign', 'verify' or 'verify-correct')")
         end = timer()
+        print(end-start)
         logger.log_execution_end(timedelta(seconds=end-start))
     except Exception as e:
         logger.log_error(traceback.print_exc)
