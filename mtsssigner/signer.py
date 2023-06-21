@@ -5,8 +5,9 @@ from mtsssigner.cff_builder import (create_cff,
                                     get_k_from_n_and_q,
                                     get_q_from_k_and_n,
                                     create_1_cff,
+                                    get_t_for_1_cff,
                                     get_d)
-from mtsssigner.utils.file_and_block_utils import get_message_and_blocks_from_file
+from mtsssigner.utils.file_and_block_utils import get_message_and_blocks_from_file, read_cff_from_file
 from mtsssigner.utils.prime_utils import is_prime_power
 from mtsssigner.signature_scheme import SigScheme
 from mtsssigner import logger
@@ -32,7 +33,11 @@ def sign(sig_scheme: SigScheme, message_file_path: str, private_key_path: str,
     cff: list(list) = [[]]
 
     if k == 1:
-        cff = create_1_cff(n)
+        try:
+            cff = read_cff_from_file(get_t_for_1_cff(n), n, 1)
+            logger.log_cff_from_file()
+        except:
+            cff = create_1_cff(n)
     elif max_size_bytes > 0:
         message_hash_bytes = sig_scheme.digest_size_bytes
         space_for_tests = int(max_size_bytes - sig_scheme.signature_length_bytes - message_hash_bytes)

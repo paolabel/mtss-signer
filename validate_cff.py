@@ -1,8 +1,7 @@
 from mtsssigner.cff_builder import *
-from numpy import logical_or, ndarray
-from typing import List, Tuple
+from numpy import logical_or
+from typing import List
 import sys
-import re
 import functools
 from multiprocessing import Pool
 

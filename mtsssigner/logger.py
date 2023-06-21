@@ -94,6 +94,9 @@ def log_correction_parameters(s: int, process_pool_size: int) -> None:
          f"Available parallel processes to realize the correction: {process_pool_size}\n")
     )
 
+def log_cff_from_file() -> None:
+    __write_to_log_file("CFF read from file.\n")
+
 def log_correction_progress(b: int) -> None:
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")

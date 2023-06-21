@@ -104,6 +104,14 @@ def write_correction_to_file(message_file_path: str, content: str):
     with open(correction_file_path, "w", encoding="utf-8") as correction_file:
         correction_file.write(content)
 
+def read_cff_from_file(t: int, n: int, d:int) -> List[List[int]]:
+    with open(f"cffs/{d}-CFF({t}, {n}).txt", "r", encoding="utf-8") as file:
+        cff_lines = file.readlines()
+    cff = []
+    for line in cff_lines:
+        cff.append([int(number) for number in line.split(" ")])
+    return cff
+
 # Returns smaller blocks to allow correction of long blocks.
 # Wouldn't work unless the modifications maintain the original number of characters
 #

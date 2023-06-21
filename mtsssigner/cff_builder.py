@@ -28,7 +28,7 @@ def create_1_cff(n: int) -> List[List[int]]:
     for block in range(n):
         for incidence in tests[block]:
             cff[incidence][block] = 1
-    return cff
+    return cff.tolist()
 
 # Returns the number of tests required for building
 # an optimal 1-CFF(n) using Sperner set systems
@@ -81,7 +81,7 @@ def __create_polynomial_cff(q: int, k: int) -> List[List[int]]:
             if b_set[block](x_set[test][0]) == x_set[test][1]:
                 cff[test][block] = 1
 
-    return cff
+    return cff.tolist()
 
 # Returns the B set for constructing a polynomial CFF
 def __get_b_set(field: FieldArray, k: int) -> List[Polynomial]:
@@ -149,7 +149,6 @@ def get_k_from_n_and_q(n: int, q: int) -> int:
              "   If you are verifying a signature, the number of blocks of the modified file is "
              "different from the original message."
         )
-        logger.log_error(error_message)
         raise ValueError(error_message)
     return k
 

@@ -9,7 +9,8 @@ from mtsssigner.cff_builder import (create_cff,
                                     get_d,
                                     create_1_cff)
 from mtsssigner.utils.file_and_block_utils import (get_message_and_blocks_from_file,
-                                                   rebuild_content_from_blocks)
+                                                   rebuild_content_from_blocks,
+                                                   read_cff_from_file)
 from mtsssigner import logger
 from mtsssigner.signature_scheme import SigScheme
 
@@ -74,9 +75,12 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
             cff = create_cff(q, k)
     except ValueError as exception:
         if n <= comb(number_of_tests, int(floor(number_of_tests/2))):
-            cff = create_1_cff(n)
             d = 1
             k = 1
+            try:
+                cff = read_cff_from_file(number_of_tests, n, d)
+            except:
+                cff = create_1_cff(n)
         else:
             raise exception
 
