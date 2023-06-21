@@ -47,10 +47,18 @@ def sign(sig_scheme: SigScheme, message_file_path: str, private_key_path: str,
             )
         q = int(sqrt(floor(space_for_tests/sig_scheme.digest_size_bytes)))
         k = get_k_from_n_and_q(n, q)
-        cff = create_cff(q, k)
+        try:
+            cff = read_cff_from_file(q**2, q**k, get_d(q,k))
+            logger.log_cff_from_file()
+        except:
+            cff = create_cff(q, k)
     elif k > 1:
         q = get_q_from_k_and_n(k, n)
-        cff = create_cff(q, k)
+        try:
+            cff = read_cff_from_file(q**2, q**k, get_d(q,k))
+            logger.log_cff_from_file()
+        except:
+            cff = create_cff(q, k)
     else:
         raise Exception("Either max size or 'K' value must be provided")
 

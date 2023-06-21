@@ -69,10 +69,13 @@ def verify(sig_scheme: SigScheme, message_file_path: str, signature_file_path: s
     try :
         k: int = get_k_from_n_and_q(n, q)
         d: int = get_d(q, k)
-        if d < 2:
-            cff = create_1_cff(n)
-        else:
-            cff = create_cff(q, k)
+        try:
+            cff = read_cff_from_file(number_of_tests, n, d)
+        except:
+            if d < 2:
+                cff = create_1_cff(n)
+            else:
+                cff = create_cff(q, k)
     except ValueError as exception:
         if n <= comb(number_of_tests, int(floor(number_of_tests/2))):
             d = 1
