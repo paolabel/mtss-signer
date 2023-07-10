@@ -12,13 +12,6 @@ from mtsssigner.utils.file_and_block_utils import (get_signature_file_path,
                                                    write_correction_to_file,
                                                    write_signature_to_file)
 
-# python mtss_signer.py sign rsa messagepath privkeypath -s/-k number hashfunc
-# python mtss_signer.py sign ed25519 messagepath privkeypath -s/-k number
-# python mtss_signer.py verify rsa messagepath pubkeypath signaturepath hashfunc
-# python mtss_signer.py verify ed25519 messagepath pubkeypath signaturepath
-# python mtss_signer.py verify-correct rsa messagepath pubkeypath signaturepath hashfunc
-# python mtss_signer.py verify-correct ed25519 messagepath pubkeypath signaturepath hashfunc
-
 def __print_localization_result(result: Tuple[bool, List[int]]):
     signature_status = "Signature is valid" if result[0] else "Signature could not be verified"
     if result[0]:
@@ -30,6 +23,27 @@ def __print_localization_result(result: Tuple[bool, List[int]]):
     else:
         print(f"\nVerification result: {signature_status}")
 
+def __print_operation_result(enabled: bool, operation: str, message_file_path: str, localization_result: Tuple[bool, List[int]] = None):
+    if not enabled:
+        return
+    if operation == "sign":
+        print(f"\nSignature written to {get_signature_file_path(message_file_path)}")
+    elif operation == "verify":
+        __print_localization_result(localization_result)
+    elif operation == "correct":
+            print(f"\nCorrection written to {get_correction_file_path(message_file_path)}")
+
+# python mtss_signer.py sign rsa messagepath privkeypath -s/-k number hashfunc
+# python mtss_signer.py sign ed25519 messagepath privkeypath -s/-k number
+# python mtss_signer.py verify rsa messagepath pubkeypath signaturepath hashfunc
+# python mtss_signer.py verify ed25519 messagepath pubkeypath signaturepath
+# python mtss_signer.py verify-correct rsa messagepath pubkeypath signaturepath hashfunc
+# python mtss_signer.py verify-correct ed25519 messagepath pubkeypath signaturepath hashfunc
+# optional --debug or --time-only flag comes last
+
+# If "time only" mode is enabled, the function will print only the total time measurement
+# of the execution. Otherwise, it will print the result of the operation
+# If debug mode is enabled, the logger will record execution information to the log file.
 if __name__ == '__main__':
 
     command = sys.argv
@@ -37,6 +51,9 @@ if __name__ == '__main__':
     sig_algorithm = sys.argv[2].lower()
     message_file_path = sys.argv[3]
     key_file_path = sys.argv[4]
+    logger.enabled = (sys.argv[-1] == "--debug")
+    output_time:bool = (sys.argv[-1] == "--time-only")
+    print_results: bool = not output_time
     start = timer()
     try:
         if sig_algorithm == "rsa":
@@ -55,32 +72,31 @@ if __name__ == '__main__':
                 raise ValueError("Invalid argument for flag (must be '-s' or '-k')")
             if flag == "-s":
                 signature = sign(sig_scheme, message_file_path, key_file_path, max_size_bytes=number)
-                write_signature_to_file(signature, message_file_path)
-                print(f"\nSignature written to {get_signature_file_path(message_file_path)}")
             elif flag == "-k":
                 signature = sign(sig_scheme, message_file_path, key_file_path, k=number)
-                write_signature_to_file(signature, message_file_path)
-                print(f"\nSignature written to {get_signature_file_path(message_file_path)}")
             else:
                 raise ValueError("Invalid option for sign operation (must be '-s' or '-k')")
+            write_signature_to_file(signature, message_file_path)
+            __print_operation_result(print_results, operation, message_file_path)
         elif operation == "verify":
             signature_file_path = sys.argv[5]
             result = verify(sig_scheme, message_file_path, signature_file_path, key_file_path)
-            __print_localization_result(result)
+            __print_operation_result(print_results, operation, message_file_path, result)
         elif operation == "verify-correct":
             signature_file_path = sys.argv[5]
             result = verify_and_correct(sig_scheme, message_file_path, signature_file_path, key_file_path)
-            __print_localization_result(result)
+            __print_operation_result(print_results, "verify", message_file_path, result)
             correction = result[2]
             if correction != "":
                 write_correction_to_file(message_file_path, correction)
-                print(f"\nCorrection written to {get_correction_file_path(message_file_path)}")
+                __print_operation_result(print_results, operation, message_file_path, result)
             elif len(result[1]) > 0:
                 print(f"\nFile {message_file_path} could not be corrected")
         else:
             raise ValueError( "Unsupported operation (must be 'sign', 'verify' or 'verify-correct')")
         end = timer()
-        print(end-start)
+        if output_time:
+            print(end-start)
         logger.log_execution_end(timedelta(seconds=end-start))
     except Exception as e:
         logger.log_error(traceback.print_exc)
