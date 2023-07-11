@@ -66,7 +66,7 @@ def log_signature_parameters(signed_file: str, private_key_file: str, n:int,
         log_content += f"Resulting CFF = {d}-CFF({t}, {n})\n"
     modifiable_blocks_proportion = round(d/n, 4)
     log_content += f"Proportion of modifiable blocks: {modifiable_blocks_proportion}%\n"
-    # log_content += f"Blocks:\n{blocks}\n"
+    log_content += f"Blocks:\n{blocks}\n"
     __write_to_log_file(log_content)
 
 def log_nonmodified_verification_result(verified_file: str, public_key_file: str,
