@@ -2,7 +2,7 @@
 
 # Descrição
 
-O objetivo da aplicação é o de gerar e verificar assinaturas seguindo o esquema MTSS, é possível localizar modificações feitas no documento assinado até certo ponto. Para isso, o arquivo é separado em blocos, e até ```d``` blocos podem ser modificados conforme a estrutura gerada para a assinatura. O funcionamento do esquema é descrito em detalhes no trabalho ...
+O objetivo da aplicação é o de gerar e verificar assinaturas seguindo o esquema MTSS, é possível localizar modificações feitas no documento assinado até certo ponto. Para isso, o arquivo é separado em blocos, e até ```d``` blocos podem ser modificados conforme a estrutura gerada para a assinatura. O funcionamento do esquema é descrito em detalhes na [monografia completa](https://repositorio.ufsc.br/handle/123456789/248660).
 # Utilização
 
 Dependências: Python 3.10, pycryptodome, galois, pytest, sympy
